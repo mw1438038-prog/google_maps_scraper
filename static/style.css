@@ -1,0 +1,699 @@
+* {
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   BODY
+========================================================= */
+
+body {
+  margin: 0;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  background: #f3f6f8;
+
+  color: #17202a;
+}
+
+/* =========================================================
+   MAIN CONTAINER
+========================================================= */
+
+.container {
+  width: 94%;
+
+  max-width: 1500px;
+
+  margin: 30px auto;
+}
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.hero {
+  background: linear-gradient(135deg, #12372a, #1f6f50);
+
+  color: white;
+
+  padding: 35px;
+
+  border-radius: 18px;
+
+  margin-bottom: 25px;
+
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.hero h1 {
+  margin: 0 0 8px;
+
+  font-size: 32px;
+
+  font-weight: 700;
+}
+
+.hero p {
+  margin: 0;
+
+  opacity: 0.9;
+
+  font-size: 16px;
+}
+
+/* =========================================================
+   SEARCH CARD
+========================================================= */
+
+.search-card {
+  background: white;
+
+  padding: 25px;
+
+  border-radius: 18px;
+
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
+
+  display: grid;
+
+  /*
+    Country = City = Keyword
+    Search button separate
+  */
+
+  grid-template-columns: 1fr 1fr 1fr auto;
+
+  gap: 18px;
+
+  align-items: end;
+}
+
+/* =========================================================
+   FORM GROUP
+========================================================= */
+
+.form-group {
+  width: 100%;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 600;
+
+  font-size: 14px;
+
+  color: #253238;
+}
+
+/* =========================================================
+   INPUT + SELECT
+========================================================= */
+
+.form-group input,
+.form-group select {
+  width: 100%;
+
+  height: 46px;
+
+  padding: 0 14px;
+
+  border: 1px solid #d5dce0;
+
+  border-radius: 10px;
+
+  outline: none;
+
+  font-size: 15px;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  background: white;
+
+  color: #17202a;
+
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+/* =========================================================
+   INPUT PLACEHOLDER
+========================================================= */
+
+.form-group input::placeholder {
+  color: #8a969d;
+}
+
+/* =========================================================
+   INPUT + SELECT FOCUS
+========================================================= */
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #1f6f50;
+
+  box-shadow: 0 0 0 3px rgba(31, 111, 80, 0.1);
+}
+
+/* =========================================================
+   SELECT
+========================================================= */
+
+.form-group select {
+  cursor: pointer;
+
+  appearance: auto;
+}
+
+/* =========================================================
+   DISABLED SELECT
+========================================================= */
+
+.form-group select:disabled {
+  background: #f1f4f3;
+
+  color: #8a969d;
+
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   GENERAL BUTTON
+========================================================= */
+
+button {
+  border: none;
+
+  height: 46px;
+
+  padding: 0 22px;
+
+  border-radius: 10px;
+
+  background: #1f6f50;
+
+  color: white;
+
+  font-size: 15px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+  transition:
+    background 0.2s,
+    transform 0.1s,
+    opacity 0.2s;
+}
+
+button:hover {
+  background: #18583f;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.6;
+
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.status {
+  margin-top: 20px;
+
+  padding: 13px 16px;
+
+  border-radius: 10px;
+
+  display: none;
+
+  font-size: 14px;
+
+  font-weight: 600;
+}
+
+.status.success {
+  display: block;
+
+  background: #e7f6ed;
+
+  color: #166534;
+}
+
+.status.error {
+  display: block;
+
+  background: #feecec;
+
+  color: #991b1b;
+}
+
+.status.loading {
+  display: block;
+
+  background: #eef4ff;
+
+  color: #1e40af;
+}
+
+/* =========================================================
+   RESULTS SECTION
+========================================================= */
+
+.results-section {
+  margin-top: 25px;
+
+  background: white;
+
+  border-radius: 18px;
+
+  padding: 25px;
+
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
+}
+
+/* =========================================================
+   RESULTS HEADER
+========================================================= */
+
+.results-header {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-bottom: 20px;
+
+  gap: 20px;
+}
+
+.results-title {
+  display: flex;
+
+  align-items: center;
+
+  gap: 15px;
+}
+
+.results-title h2 {
+  margin: 0;
+
+  font-size: 22px;
+
+  color: #17202a;
+}
+
+#resultCount {
+  background: #eef5f1;
+
+  color: #1f6f50;
+
+  padding: 7px 12px;
+
+  border-radius: 20px;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+/* =========================================================
+   EXPORT BUTTONS
+========================================================= */
+
+.export-buttons {
+  display: flex;
+
+  gap: 10px;
+
+  align-items: center;
+}
+
+.export-button {
+  border: none;
+
+  height: auto;
+
+  padding: 10px 16px;
+
+  border-radius: 9px;
+
+  background: #1769aa;
+
+  color: white;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+}
+
+.export-button:hover {
+  background: #125887;
+}
+
+.export-button:disabled {
+  opacity: 0.45;
+
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   EXCEL BUTTON
+========================================================= */
+
+.excel-button {
+  background: #217346;
+}
+
+.excel-button:hover {
+  background: #185c37;
+}
+
+/* =========================================================
+   TABLE CONTAINER
+========================================================= */
+
+.table-container {
+  width: 100%;
+
+  overflow-x: auto;
+
+  border: 1px solid #e8edef;
+
+  border-radius: 10px;
+}
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  min-width: 1100px;
+}
+
+/* =========================================================
+   TABLE HEADER
+========================================================= */
+
+thead {
+  background: #f4f7f6;
+}
+
+th,
+td {
+  padding: 14px 12px;
+
+  text-align: left;
+
+  border-bottom: 1px solid #e8edef;
+
+  font-size: 14px;
+
+  vertical-align: top;
+}
+
+th {
+  font-weight: 700;
+
+  color: #263238;
+
+  white-space: nowrap;
+}
+
+tbody tr {
+  transition: background 0.15s;
+}
+
+tbody tr:hover {
+  background: #f8faf9;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* =========================================================
+   BUSINESS NAME
+========================================================= */
+
+td strong {
+  color: #17202a;
+
+  font-weight: 700;
+}
+
+/* =========================================================
+   LINKS
+========================================================= */
+
+td a {
+  color: #1769aa;
+
+  text-decoration: none;
+
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+td a:hover {
+  text-decoration: underline;
+}
+
+/* =========================================================
+   NO RESULTS
+========================================================= */
+
+.no-results {
+  text-align: center;
+
+  padding: 40px;
+
+  color: #69747c;
+
+  font-size: 15px;
+}
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+.table-container::-webkit-scrollbar {
+  height: 9px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: #f1f3f4;
+
+  border-radius: 10px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #b8c2c7;
+
+  border-radius: 10px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #8f9ba1;
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 1100px) {
+  .search-card {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .search-card button {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+  .container {
+    width: 94%;
+
+    margin: 18px auto;
+  }
+
+  /* HERO */
+
+  .hero {
+    padding: 25px 20px;
+
+    border-radius: 14px;
+  }
+
+  .hero h1 {
+    font-size: 25px;
+
+    line-height: 1.25;
+  }
+
+  .hero p {
+    font-size: 14px;
+
+    line-height: 1.5;
+  }
+
+  /* SEARCH */
+
+  .search-card {
+    grid-template-columns: 1fr;
+
+    padding: 20px;
+
+    border-radius: 14px;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+
+    height: 46px;
+
+    padding: 0 12px;
+  }
+
+  .search-card button {
+    width: 100%;
+
+    height: 46px;
+
+    padding: 0 18px;
+  }
+
+  /* RESULTS */
+
+  .results-section {
+    padding: 18px;
+
+    border-radius: 14px;
+  }
+
+  .results-header {
+    flex-direction: column;
+
+    align-items: stretch;
+
+    gap: 15px;
+  }
+
+  .results-title {
+    justify-content: space-between;
+
+    width: 100%;
+  }
+
+  .results-title h2 {
+    font-size: 20px;
+  }
+
+  /* EXPORT */
+
+  .export-buttons {
+    width: 100%;
+  }
+
+  .export-button {
+    flex: 1;
+
+    width: 50%;
+
+    padding: 11px 10px;
+
+    font-size: 13px;
+  }
+
+  /* TABLE */
+
+  .table-container {
+    border-radius: 8px;
+  }
+}
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 430px) {
+  .container {
+    width: 96%;
+  }
+
+  .hero {
+    padding: 22px 17px;
+  }
+
+  .hero h1 {
+    font-size: 22px;
+  }
+
+  .hero p {
+    font-size: 13px;
+  }
+
+  .search-card {
+    padding: 16px;
+  }
+
+  .results-section {
+    padding: 14px;
+  }
+
+  .results-title {
+    gap: 8px;
+  }
+
+  .results-title h2 {
+    font-size: 18px;
+  }
+
+  #resultCount {
+    padding: 6px 9px;
+
+    font-size: 12px;
+  }
+
+  .export-buttons {
+    gap: 7px;
+  }
+
+  .export-button {
+    padding: 10px 6px;
+
+    font-size: 12px;
+  }
+}
