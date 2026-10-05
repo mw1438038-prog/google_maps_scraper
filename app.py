@@ -1,8 +1,9 @@
-
 from io import BytesIO, StringIO
 from copy import copy
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import csv
-import requests
+
+import geonamescache
 
 from flask import (
     Flask,
@@ -17,19 +18,14 @@ from openpyxl import Workbook
 
 from config import Config
 from services.google_places import GooglePlacesService
+from services.website_scraper import WebsiteScraper
 
 
 # =========================================================
-# COUNTRIES / CITIES API
+# GEONAMES CACHE
 # =========================================================
 
-COUNTRIES_API_URL = (
-    "https://countriesnow.space/api/v0.1/countries"
-)
-
-CITIES_API_URL = (
-    "https://countriesnow.space/api/v0.1/countries/cities"
-)
+gc = geonamescache.GeonamesCache()
 
 
 # =========================================================
@@ -57,6 +53,68 @@ def create_app():
     )
 
     # =====================================================
+    # WEBSITE SCRAPER
+    # =====================================================
+
+    website_scraper = WebsiteScraper(
+        timeout=5
+    )
+
+    # =====================================================
+    # SCRAPE ONE WEBSITE
+    # =====================================================
+
+    def scrape_one_website(place):
+
+        # -------------------------------------------------
+        # DEFAULT EMPTY FIELDS
+        # -------------------------------------------------
+
+        place["email"] = ""
+        place["facebook"] = ""
+        place["instagram"] = ""
+        place["linkedin"] = ""
+        place["twitter"] = ""
+        place["other_social"] = ""
+
+        website = place.get(
+            "website",
+            ""
+        )
+
+        # -------------------------------------------------
+        # NO WEBSITE
+        # -------------------------------------------------
+
+        if not website:
+            return place
+
+        # -------------------------------------------------
+        # SCRAPE WEBSITE
+        # -------------------------------------------------
+
+        try:
+
+            scraped_data = (
+                website_scraper.scrape(
+                    website
+                )
+            )
+
+            place.update(
+                scraped_data
+            )
+
+        except Exception:
+
+            # One website failure should
+            # not stop the complete search.
+
+            pass
+
+        return place
+
+    # =====================================================
     # HOME PAGE
     # =====================================================
 
@@ -80,6 +138,9 @@ def create_app():
 
     # =====================================================
     # GET COUNTRIES
+    #
+    # CountriesNow API removed.
+    # Countries are loaded locally from geonamescache.
     # =====================================================
 
     @app.route(
@@ -90,24 +151,16 @@ def create_app():
 
         try:
 
-            response = requests.get(
-                COUNTRIES_API_URL,
-                timeout=20,
+            countries_data = (
+                gc.get_countries()
             )
-
-            response.raise_for_status()
-
-            data = response.json()
 
             countries = []
 
-            for country in data.get(
-                "data",
-                []
-            ):
+            for country in countries_data.values():
 
                 name = country.get(
-                    "country",
+                    "name",
                     ""
                 ).strip()
 
@@ -143,6 +196,8 @@ def create_app():
 
     # =====================================================
     # GET CITIES
+    #
+    # Cities are loaded locally from geonamescache.
     # =====================================================
 
     @app.route(
@@ -173,40 +228,89 @@ def create_app():
 
         try:
 
-            response = requests.post(
+            # =============================================
+            # FIND COUNTRY CODE
+            # =============================================
 
-                CITIES_API_URL,
-
-                json={
-                    "country": country
-                },
-
-                timeout=20,
+            countries_data = (
+                gc.get_countries()
             )
 
-            response.raise_for_status()
+            country_code = None
 
-            data = response.json()
+            for code, country_data in (
+                countries_data.items()
+            ):
 
-            cities = data.get(
-                "data",
-                []
+                country_name = country_data.get(
+                    "name",
+                    ""
+                ).strip()
+
+                if (
+                    country_name.lower()
+                    == country.lower()
+                ):
+
+                    country_code = code
+
+                    break
+
+            # =============================================
+            # COUNTRY NOT FOUND
+            # =============================================
+
+            if not country_code:
+
+                return jsonify({
+
+                    "success": False,
+
+                    "message":
+                        "Country not found.",
+
+                }), 404
+
+            # =============================================
+            # GET CITIES
+            # =============================================
+
+            cities_data = (
+                gc.get_cities()
             )
 
-            cities = [
+            cities = []
 
-                city.strip()
+            for city_data in (
+                cities_data.values()
+            ):
 
-                for city in cities
-
-                if isinstance(
-                    city,
-                    str
+                city_country_code = (
+                    city_data.get(
+                        "countrycode",
+                        ""
+                    )
                 )
 
-                and city.strip()
+                if (
+                    city_country_code
+                    == country_code
+                ):
 
-            ]
+                    city_name = city_data.get(
+                        "name",
+                        ""
+                    ).strip()
+
+                    if city_name:
+
+                        cities.append(
+                            city_name
+                        )
+
+            # =============================================
+            # REMOVE DUPLICATES
+            # =============================================
 
             cities = sorted(
                 set(cities)
@@ -235,7 +339,7 @@ def create_app():
             }), 500
 
     # =====================================================
-    # SEARCH GOOGLE MAPS
+    # SEARCH GOOGLE MAPS + WEBSITE SCRAPER
     # =====================================================
 
     @app.route(
@@ -314,6 +418,117 @@ def create_app():
                 )
             )
 
+            # =================================================
+            # PARALLEL WEBSITE SCRAPING
+            # =================================================
+
+            scraped_results = []
+
+            # Only submit places that actually
+            # have a website.
+
+            places_with_websites = [
+                place
+                for place in results
+                if place.get(
+                    "website",
+                    ""
+                )
+            ]
+
+            places_without_websites = [
+                place
+                for place in results
+                if not place.get(
+                    "website",
+                    ""
+                )
+            ]
+
+            # -------------------------------------------------
+            # DEFAULT FIELDS FOR PLACES WITHOUT WEBSITE
+            # -------------------------------------------------
+
+            for place in places_without_websites:
+
+                place["email"] = ""
+                place["facebook"] = ""
+                place["instagram"] = ""
+                place["linkedin"] = ""
+                place["twitter"] = ""
+                place["other_social"] = ""
+
+            # -------------------------------------------------
+            # SCRAPE UP TO 10 WEBSITES AT THE SAME TIME
+            # -------------------------------------------------
+
+            if places_with_websites:
+
+                with ThreadPoolExecutor(
+                    max_workers=10
+                ) as executor:
+
+                    futures = [
+                        executor.submit(
+                            scrape_one_website,
+                            place
+                        )
+                        for place in places_with_websites
+                    ]
+
+                    for future in as_completed(
+                        futures
+                    ):
+
+                        try:
+
+                            scraped_place = (
+                                future.result()
+                            )
+
+                            scraped_results.append(
+                                scraped_place
+                            )
+
+                        except Exception:
+
+                            continue
+
+            # =================================================
+            # KEEP ORIGINAL GOOGLE RESULTS ORDER
+            # =================================================
+
+            result_map = {
+                place.get("id"): place
+                for place in scraped_results
+            }
+
+            final_results = []
+
+            for place in results:
+
+                place_id = place.get(
+                    "id"
+                )
+
+                if place_id in result_map:
+
+                    final_results.append(
+                        result_map[place_id]
+                    )
+
+                else:
+
+                    final_results.append(
+                        place
+                    )
+
+            results = final_results
+
+            # =================================================
+            # RETURN RESULTS
+            # =================================================
+
             return jsonify({
 
                 "success": True,
@@ -353,10 +568,6 @@ def create_app():
             []
         )
 
-        # =================================================
-        # VALIDATION
-        # =================================================
-
         if not results:
 
             return jsonify({
@@ -369,16 +580,14 @@ def create_app():
             }), 400
 
         # =================================================
-        # CREATE CSV IN MEMORY
+        # CREATE CSV
         # =================================================
 
         output = StringIO(
             newline=""
         )
 
-        # UTF-8 BOM
-        # Excel ke liye useful hai
-
+        # UTF-8 BOM for Excel
         output.write(
             "\ufeff"
         )
@@ -389,7 +598,7 @@ def create_app():
         )
 
         # =================================================
-        # CSV HEADERS
+        # HEADERS
         # =================================================
 
         writer.writerow([
@@ -399,6 +608,18 @@ def create_app():
             "Phone",
 
             "Website",
+
+            "Email",
+
+            "Facebook",
+
+            "Instagram",
+
+            "LinkedIn",
+
+            "Twitter",
+
+            "Other Social",
 
             "Location",
 
@@ -413,7 +634,7 @@ def create_app():
         ])
 
         # =================================================
-        # CSV DATA
+        # DATA
         # =================================================
 
         for place in results:
@@ -432,6 +653,36 @@ def create_app():
 
                 place.get(
                     "website",
+                    ""
+                ),
+
+                place.get(
+                    "email",
+                    ""
+                ),
+
+                place.get(
+                    "facebook",
+                    ""
+                ),
+
+                place.get(
+                    "instagram",
+                    ""
+                ),
+
+                place.get(
+                    "linkedin",
+                    ""
+                ),
+
+                place.get(
+                    "twitter",
+                    ""
+                ),
+
+                place.get(
+                    "other_social",
                     ""
                 ),
 
@@ -508,10 +759,6 @@ def create_app():
             []
         )
 
-        # =================================================
-        # VALIDATION
-        # =================================================
-
         if not results:
 
             return jsonify({
@@ -529,7 +776,9 @@ def create_app():
 
         workbook = Workbook()
 
-        worksheet = workbook.active
+        worksheet = (
+            workbook.active
+        )
 
         worksheet.title = (
             "Google Maps Leads"
@@ -546,6 +795,18 @@ def create_app():
             "Phone",
 
             "Website",
+
+            "Email",
+
+            "Facebook",
+
+            "Instagram",
+
+            "LinkedIn",
+
+            "Twitter",
+
+            "Other Social",
 
             "Location",
 
@@ -583,6 +844,36 @@ def create_app():
 
                 place.get(
                     "website",
+                    ""
+                ),
+
+                place.get(
+                    "email",
+                    ""
+                ),
+
+                place.get(
+                    "facebook",
+                    ""
+                ),
+
+                place.get(
+                    "instagram",
+                    ""
+                ),
+
+                place.get(
+                    "linkedin",
+                    ""
+                ),
+
+                place.get(
+                    "twitter",
+                    ""
+                ),
+
+                place.get(
+                    "other_social",
                     ""
                 ),
 
@@ -625,15 +916,27 @@ def create_app():
 
             "C": 45,
 
-            "D": 70,
+            "D": 35,
 
-            "E": 12,
+            "E": 45,
 
-            "F": 12,
+            "F": 45,
 
-            "G": 60,
+            "G": 45,
 
-            "H": 40,
+            "H": 45,
+
+            "I": 60,
+
+            "J": 70,
+
+            "K": 12,
+
+            "L": 12,
+
+            "M": 60,
+
+            "N": 40,
 
         }
 
