@@ -812,31 +812,163 @@
         font-size: 14px;
       }
       /* =====================================================
-   EXPORT IMAGE
-   ===================================================== */
+   EXPORT YOUR LEADS
+===================================================== */
 
-      .export-image {
-        min-height: 300px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      .export-section {
+        position: relative;
+        width: 100%;
+
+        background-image: url("/static/images/home-bg.jpg");
+        background-position: center center;
+        background-size: cover;
+        background-repeat: no-repeat;
+
         overflow: hidden;
-        background: #ffffff;
-        padding: 20px;
       }
 
-      .export-section-image {
-        width: 85%;
+      /* =====================================================
+   GREEN OVERLAY - SAME STYLE AS HOME
+===================================================== */
+
+      .export-section::before {
+        content: "";
+
+        position: absolute;
+        inset: 0;
+
+        background: rgba(0, 80, 50, 0.42);
+
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      /* =====================================================
+   EXPORT CONTENT
+===================================================== */
+
+      .export-content {
+        position: relative;
+        z-index: 1;
+
+        width: 100%;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      /* =====================================================
+   EXPORT TEXT
+===================================================== */
+
+      .export-text {
+        width: 100%;
+        max-width: 950px;
+
+        text-align: center;
+
+        margin: 0 auto 40px;
+
+        padding: 30px 35px;
+
+        background: transparent;
+      }
+
+      .export-text h3 {
+        color: #ffffff;
+
+        font-size: 38px;
+        font-weight: 800;
+
+        margin: 0 0 18px;
+
+        line-height: 1.2;
+      }
+
+      .export-text p {
+        color: #ffffff;
+
+        font-size: 19px;
+        font-weight: 400;
+
+        line-height: 1.8;
+
+        margin: 0 auto;
+
+        max-width: 850px;
+      }
+
+      /* =====================================================
+   EXPORT IMAGE
+===================================================== */
+
+      .export-image-only {
+        position: relative;
+        z-index: 1;
+
+        width: 100%;
+
+        display: flex;
+
+        justify-content: center;
+        align-items: center;
+      }
+
+      .export-image-only img {
+        width: 100%;
+        max-width: 900px;
+
         height: auto;
-        max-height: 280px;
-        object-fit: contain;
-        object-position: center;
+
         display: block;
 
-        transform: none !important;
-        animation: none !important;
+        object-fit: contain;
+
+        border: none;
+
+        box-shadow: none;
+
+        background: transparent;
+
+        padding: 0;
+
+        margin: 0 auto;
       }
 
+      /* =====================================================
+   MOBILE
+===================================================== */
+
+      @media (max-width: 650px) {
+        .export-text {
+          margin-bottom: 28px;
+
+          padding: 22px 18px;
+        }
+
+        .export-text h3 {
+          font-size: 28px;
+          line-height: 1.25;
+
+          margin-bottom: 14px;
+        }
+
+        .export-text p {
+          font-size: 16px;
+          line-height: 1.7;
+        }
+
+        .export-image-only {
+          width: 100%;
+        }
+
+        .export-image-only img {
+          width: 100%;
+          max-width: 100%;
+          height: auto;
+        }
+      }
       /* =====================================================
          CTA
       ===================================================== */
@@ -1427,10 +1559,9 @@
         </div>
       </div>
     </section>
-
     <!-- =====================================================
-         HOW IT WORKS
-    ====================================================== -->
+     HOW IT WORKS
+====================================================== -->
 
     <section class="section steps-section" id="how-it-works">
       <div class="section-inner">
@@ -1477,13 +1608,13 @@
     </section>
 
     <!-- =====================================================
-         EXPORT YOUR LEADS
-    ====================================================== -->
+     EXPORT YOUR LEADS
+====================================================== -->
 
     <section class="section export-section">
       <div class="section-inner">
-        <div class="image-content-grid reverse">
-          <div class="content-text">
+        <div class="export-content">
+          <div class="export-text">
             <h3>📥 Export Your Leads</h3>
 
             <p>
@@ -1493,17 +1624,15 @@
             </p>
           </div>
 
-          <div class="section-image-wrap export-image">
+          <div class="export-image-only">
             <img
               src="{{ url_for('static', filename='images/lead-finder.jpg') }}"
               alt="Lead Finder results and business leads"
-              class="section-image"
             />
           </div>
         </div>
       </div>
     </section>
-
     <!-- =====================================================
          CTA
     ====================================================== -->
