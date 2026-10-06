@@ -2,12 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Google Maps Lead Finder</title>
 
     <style>
+      /* =====================================================
+         RESET
+      ===================================================== */
+
       * {
         margin: 0;
         padding: 0;
@@ -22,6 +25,47 @@
         font-family: Arial, Helvetica, sans-serif;
         background: #f5f8f7;
         color: #17202a;
+        overflow-x: hidden;
+      }
+
+      /* =====================================================
+         HOME BACKGROUND
+      ===================================================== */
+
+      .home-background {
+        position: fixed;
+        top: -5%;
+        left: -5%;
+        width: 110%;
+        height: 110%;
+        z-index: -10;
+        pointer-events: none;
+
+        background-image: url("/static/images/home-bg.jpg");
+        background-size: cover;
+        background-position: center center;
+        background-repeat: no-repeat;
+
+        animation: homeBackgroundMove 25s ease-in-out infinite alternate;
+        will-change: transform;
+      }
+
+      @keyframes homeBackgroundMove {
+        0% {
+          transform: scale(1) translate3d(0, 0, 0);
+        }
+
+        50% {
+          transform: scale(1.04) translate3d(-0.5%, 0.3%, 0);
+        }
+
+        100% {
+          transform: scale(1.08) translate3d(0.5%, -0.3%, 0);
+        }
+      }
+
+      .home-background-glow {
+        display: none;
       }
 
       /* =====================================================
@@ -36,13 +80,14 @@
         align-items: center;
         justify-content: space-between;
 
-        background: rgba(255, 255, 255, 0.96);
+        background: rgba(255, 255, 255, 0.94);
 
-        border-bottom: 1px solid #e6ece9;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
 
-        position: sticky;
-        top: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.4);
 
+        position: relative;
         z-index: 100;
       }
 
@@ -70,7 +115,6 @@
         justify-content: center;
 
         background: #12372a;
-
         color: white;
 
         font-size: 20px;
@@ -84,7 +128,6 @@
         border-radius: 9px;
 
         background: #1f6f50;
-
         color: white;
 
         font-size: 14px;
@@ -110,33 +153,58 @@
         display: flex;
         align-items: center;
 
-        background:
-          radial-gradient(
-            circle at 85% 20%,
-            rgba(76, 175, 120, 0.25),
-            transparent 28%
-          ),
-          linear-gradient(135deg, #102f24 0%, #174b36 48%, #236f50 100%);
+        background: linear-gradient(
+          135deg,
+          rgba(8, 37, 27, 0.72),
+          rgba(17, 75, 52, 0.58),
+          rgba(25, 102, 72, 0.52)
+        );
 
         color: white;
 
         overflow: hidden;
+
+        position: relative;
+      }
+
+      .hero::before {
+        content: "";
+
+        position: absolute;
+
+        width: 500px;
+        height: 500px;
+
+        top: -200px;
+        right: -100px;
+
+        border-radius: 50%;
+
+        background: radial-gradient(
+          circle,
+          rgba(117, 214, 165, 0.2),
+          transparent 70%
+        );
+
+        pointer-events: none;
       }
 
       .hero-content {
         max-width: 1150px;
         width: 100%;
+
         margin: auto;
 
         display: grid;
 
-        grid-template-columns:
-          1.15fr
-          0.85fr;
+        grid-template-columns: 1.15fr 0.85fr;
 
         gap: 70px;
 
         align-items: center;
+
+        position: relative;
+        z-index: 2;
       }
 
       .hero-text {
@@ -145,13 +213,10 @@
 
       .badge {
         display: inline-flex;
-
         align-items: center;
-
         gap: 8px;
 
         padding: 8px 14px;
-
         margin-bottom: 22px;
 
         border-radius: 50px;
@@ -159,6 +224,8 @@
         background: rgba(255, 255, 255, 0.12);
 
         border: 1px solid rgba(255, 255, 255, 0.18);
+
+        backdrop-filter: blur(8px);
 
         font-size: 13px;
 
@@ -193,9 +260,7 @@
 
       .hero-buttons {
         display: flex;
-
         gap: 14px;
-
         flex-wrap: wrap;
       }
 
@@ -212,24 +277,22 @@
         border-radius: 10px;
 
         background: white;
-
         color: #12372a;
 
         text-decoration: none;
 
         font-size: 15px;
-
         font-weight: 700;
 
         transition: 0.25s ease;
 
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
       }
 
       .primary-button:hover {
         transform: translateY(-3px);
 
-        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.18);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
       }
 
       .secondary-button {
@@ -249,14 +312,23 @@
         text-decoration: none;
 
         font-size: 15px;
-
         font-weight: 600;
 
         background: rgba(255, 255, 255, 0.08);
+
+        backdrop-filter: blur(8px);
+
+        transition: 0.25s ease;
+      }
+
+      .secondary-button:hover {
+        background: rgba(255, 255, 255, 0.16);
+
+        transform: translateY(-2px);
       }
 
       /* =====================================================
-         HERO VISUAL
+         HERO DASHBOARD
       ===================================================== */
 
       .dashboard-preview {
@@ -268,9 +340,11 @@
 
         background: rgba(255, 255, 255, 0.12);
 
-        border: 1px solid rgba(255, 255, 255, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.2);
 
-        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.3);
+
+        backdrop-filter: blur(8px);
 
         transform: rotate(1deg);
 
@@ -317,9 +391,7 @@
       .preview-search {
         display: grid;
 
-        grid-template-columns:
-          1fr
-          1fr;
+        grid-template-columns: 1fr 1fr;
 
         gap: 10px;
 
@@ -332,7 +404,6 @@
         padding: 0 11px;
 
         display: flex;
-
         align-items: center;
 
         border: 1px solid #dce4e0;
@@ -359,10 +430,7 @@
       .preview-row {
         display: grid;
 
-        grid-template-columns:
-          1.4fr
-          1fr
-          0.55fr;
+        grid-template-columns: 1.4fr 1fr 0.55fr;
 
         gap: 8px;
 
@@ -382,22 +450,25 @@
       }
 
       /* =====================================================
-         INTRODUCTION
+         COMMON SECTIONS
       ===================================================== */
 
       .section {
-        padding: 90px 6%;
+        padding: 95px 6%;
+
+        background: rgba(245, 248, 247, 0.97);
       }
 
       .section-inner {
         max-width: 1150px;
+
         margin: auto;
       }
 
       .section-heading {
         text-align: center;
 
-        max-width: 700px;
+        max-width: 720px;
 
         margin: 0 auto 55px;
       }
@@ -432,44 +503,169 @@
         font-size: 16px;
       }
 
-      .intro-card {
+      /* =====================================================
+         IMAGE SECTIONS
+      ===================================================== */
+
+      .image-content-grid {
         display: grid;
 
-        grid-template-columns:
-          1fr
-          1fr;
+        grid-template-columns: 1fr 1fr;
 
-        gap: 30px;
+        gap: 55px;
 
-        align-items: stretch;
+        align-items: center;
       }
 
-      .intro-box {
-        padding: 34px;
+      .image-content-grid.reverse {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .content-text {
+        padding: 10px;
+      }
+
+      .content-text h3 {
+        color: #12372a;
+
+        font-size: 27px;
+
+        line-height: 1.25;
+
+        margin-bottom: 16px;
+      }
+
+      .content-text p {
+        color: #68766f;
+
+        line-height: 1.8;
+
+        font-size: 16px;
+
+        max-width: 550px;
+      }
+
+      .section-image-wrap {
+        position: relative;
+
+        width: 100%;
+
+        min-height: 330px;
+
+        border-radius: 22px;
+
+        overflow: hidden;
 
         background: white;
 
-        border: 1px solid #e2e9e5;
+        border: 1px solid #dfe8e3;
 
-        border-radius: 16px;
+        box-shadow: 0 20px 55px rgba(18, 55, 42, 0.12);
 
-        box-shadow: 0 8px 30px rgba(18, 55, 42, 0.05);
+        animation: sectionImageFloat 8s ease-in-out infinite alternate;
+
+        will-change: transform;
       }
 
-      .intro-box h3 {
-        color: #12372a;
+      .section-image-wrap::after {
+        content: "";
 
-        font-size: 22px;
+        position: absolute;
 
-        margin-bottom: 13px;
+        inset: 0;
+
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.08),
+          transparent 45%
+        );
+
+        pointer-events: none;
       }
 
-      .intro-box p {
-        color: #68766f;
+      .section-image {
+        width: 100%;
+        height: 100%;
 
-        line-height: 1.7;
+        min-height: 330px;
 
-        font-size: 15px;
+        object-fit: cover;
+
+        display: block;
+
+        transform: scale(1.02);
+
+        animation: sectionImageZoom 18s ease-in-out infinite alternate;
+
+        will-change: transform;
+      }
+
+      @keyframes sectionImageFloat {
+        0% {
+          transform: translate3d(0, 0, 0);
+        }
+
+        100% {
+          transform: translate3d(0, -7px, 0);
+        }
+      }
+
+      @keyframes sectionImageZoom {
+        0% {
+          transform: scale(1.02);
+        }
+
+        100% {
+          transform: scale(1.08);
+        }
+      }
+
+      /* =====================================================
+         ABOUT / INTRO
+      ===================================================== */
+
+      .about-section {
+        background: rgba(245, 248, 247, 0.97);
+      }
+
+      .about-image {
+        height: 360px;
+      }
+
+      .about-image .section-image {
+        min-height: 360px;
+      }
+
+      /* =====================================================
+         LEAD GENERATION
+      ===================================================== */
+
+      .lead-generation-section {
+        background: #eef4f1;
+      }
+
+      .lead-image {
+        height: 360px;
+      }
+
+      .lead-image .section-image {
+        min-height: 360px;
+      }
+
+      /* =====================================================
+         MARKETING WORKFLOW
+      ===================================================== */
+
+      .workflow-section {
+        background: rgba(245, 248, 247, 0.97);
+      }
+
+      .workflow-image {
+        height: 360px;
+      }
+
+      .workflow-image .section-image {
+        min-height: 360px;
       }
 
       /* =====================================================
@@ -546,6 +742,10 @@
          HOW IT WORKS
       ===================================================== */
 
+      .steps-section {
+        background: rgba(245, 248, 247, 0.97);
+      }
+
       .steps {
         display: grid;
 
@@ -557,7 +757,23 @@
       .step {
         text-align: center;
 
-        padding: 25px;
+        padding: 30px 25px;
+
+        background: white;
+
+        border: 1px solid #e1e9e5;
+
+        border-radius: 16px;
+
+        box-shadow: 0 8px 30px rgba(18, 55, 42, 0.04);
+
+        transition: 0.25s ease;
+      }
+
+      .step:hover {
+        transform: translateY(-5px);
+
+        box-shadow: 0 15px 35px rgba(18, 55, 42, 0.09);
       }
 
       .step-number {
@@ -595,6 +811,31 @@
 
         font-size: 14px;
       }
+      /* =====================================================
+   EXPORT IMAGE
+   ===================================================== */
+
+      .export-image {
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: #ffffff;
+        padding: 20px;
+      }
+
+      .export-section-image {
+        width: 85%;
+        height: auto;
+        max-height: 280px;
+        object-fit: contain;
+        object-position: center;
+        display: block;
+
+        transform: none !important;
+        animation: none !important;
+      }
 
       /* =====================================================
          CTA
@@ -602,6 +843,8 @@
 
       .cta-section {
         padding: 80px 6%;
+
+        background: rgba(245, 248, 247, 0.97);
       }
 
       .cta {
@@ -687,13 +930,31 @@
       @media (max-width: 900px) {
         .hero-content {
           grid-template-columns: 1fr;
+
           gap: 45px;
         }
 
         .dashboard-preview {
           max-width: 650px;
+
           width: 100%;
+
           margin: auto;
+        }
+
+        .image-content-grid,
+        .image-content-grid.reverse {
+          grid-template-columns: 1fr;
+
+          gap: 35px;
+        }
+
+        .image-content-grid.reverse .content-text {
+          order: 1;
+        }
+
+        .image-content-grid.reverse .section-image-wrap {
+          order: 2;
         }
 
         .features {
@@ -721,11 +982,13 @@
 
         .nav-button {
           padding: 9px 13px;
+
           font-size: 12px;
         }
 
         .hero {
           min-height: auto;
+
           padding: 70px 5% 65px;
         }
 
@@ -745,7 +1008,39 @@
           font-size: 30px;
         }
 
-        .intro-card,
+        .image-content-grid,
+        .image-content-grid.reverse {
+          grid-template-columns: 1fr;
+
+          gap: 28px;
+        }
+
+        .section-image-wrap,
+        .about-image,
+        .lead-image,
+        .workflow-image,
+        .export-image {
+          min-height: 250px;
+          height: 250px;
+        }
+
+        .section-image,
+        .about-image .section-image,
+        .lead-image .section-image,
+        .workflow-image .section-image,
+        .export-image .section-image {
+          min-height: 250px;
+          height: 250px;
+        }
+
+        .content-text h3 {
+          font-size: 24px;
+        }
+
+        .content-text p {
+          font-size: 15px;
+        }
+
         .features,
         .steps {
           grid-template-columns: 1fr;
@@ -776,10 +1071,62 @@
           width: 100%;
         }
       }
+
+      /* =====================================================
+         REDUCED MOTION
+      ===================================================== */
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          scroll-behavior: auto !important;
+        }
+      }
+
+      .cta-image-wrap {
+        width: min(900px, 100%);
+        margin: 28px auto 30px;
+        border-radius: 18px;
+        overflow: hidden;
+        background: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+      }
+
+      .cta-image {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+      }
+
+      @media (max-width: 768px) {
+        .cta-image-wrap {
+          margin-top: 24px;
+          margin-bottom: 26px;
+          border-radius: 14px;
+        }
+
+        .cta-image {
+          height: 210px;
+        }
+      }
     </style>
   </head>
 
   <body>
+    <!-- =====================================================
+         HOME BACKGROUND
+    ====================================================== -->
+
+    <div class="home-background" aria-hidden="true"></div>
+
+    <div class="home-background-glow" aria-hidden="true"></div>
+
     <!-- =====================================================
          NAVBAR
     ====================================================== -->
@@ -857,19 +1204,27 @@
                 </div>
 
                 <div class="preview-row">
-                  ABC Coaching Center +92 300 1234567 ⭐ 4.8
+                  <span>ABC Coaching Center</span>
+                  <span>+92 300 1234567</span>
+                  <span>⭐ 4.8</span>
                 </div>
 
                 <div class="preview-row">
-                  Smart Academy +92 301 9876543 ⭐ 4.6
+                  <span>Smart Academy</span>
+                  <span>+92 301 9876543</span>
+                  <span>⭐ 4.6</span>
                 </div>
 
                 <div class="preview-row">
-                  Success Institute +92 333 4567890 ⭐ 4.7
+                  <span>Success Institute</span>
+                  <span>+92 333 4567890</span>
+                  <span>⭐ 4.7</span>
                 </div>
 
                 <div class="preview-row">
-                  Learn & Grow Academy +92 321 5551234 ⭐ 4.5
+                  <span>Learn & Grow Academy</span>
+                  <span>+92 321 5551234</span>
+                  <span>⭐ 4.5</span>
                 </div>
               </div>
             </div>
@@ -879,10 +1234,10 @@
     </section>
 
     <!-- =====================================================
-         INTRODUCTION
+         ABOUT THE TOOL
     ====================================================== -->
 
-    <section class="section">
+    <section class="section about-section">
       <div class="section-inner">
         <div class="section-heading">
           <div class="label">About the Tool</div>
@@ -896,8 +1251,16 @@
           </p>
         </div>
 
-        <div class="intro-card">
-          <div class="intro-box">
+        <div class="image-content-grid">
+          <div class="section-image-wrap about-image">
+            <img
+              src="{{ url_for('static', filename='images/about-lead-finder.jpg') }}"
+              alt="Lead Finder business research"
+              class="section-image"
+            />
+          </div>
+
+          <div class="content-text">
             <h3>🎯 Built for Lead Generation</h3>
 
             <p>
@@ -907,8 +1270,18 @@
               relevant results quickly.
             </p>
           </div>
+        </div>
+      </div>
+    </section>
 
-          <div class="intro-box">
+    <!-- =====================================================
+         MARKETING WORKFLOW
+    ====================================================== -->
+
+    <section class="section lead-generation-section">
+      <div class="section-inner">
+        <div class="image-content-grid reverse">
+          <div class="content-text">
             <h3>📊 Ready for Your Marketing Workflow</h3>
 
             <p>
@@ -917,6 +1290,53 @@
               into CSV or Excel and continue working with your leads on your
               computer.
             </p>
+          </div>
+
+          <div class="section-image-wrap lead-image">
+            <img
+              src="{{ url_for('static', filename='images/laptop map location.jpg') }}"
+              alt="Business location research on laptop"
+              class="section-image"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================
+         MARKETING WORKFLOW IMAGE
+    ====================================================== -->
+
+    <section class="section workflow-section">
+      <div class="section-inner">
+        <div class="section-heading">
+          <div class="label">Marketing Workflow</div>
+
+          <h2>Turn Business Research Into Useful Leads</h2>
+
+          <p>
+            Quickly research businesses, review their information and move your
+            results into your marketing workflow.
+          </p>
+        </div>
+
+        <div class="image-content-grid">
+          <div class="content-text">
+            <h3>Work Smarter With Organized Business Data</h3>
+
+            <p>
+              Instead of collecting business information manually, use the Lead
+              Finder to organize useful details in one place. Review businesses
+              and continue your work using downloadable lead files.
+            </p>
+          </div>
+
+          <div class="section-image-wrap workflow-image">
+            <img
+              src="{{ url_for('static', filename='images/marketing-workflow.jpg') }}"
+              alt="Marketing workflow on computer"
+              class="section-image"
+            />
           </div>
         </div>
       </div>
@@ -1012,7 +1432,7 @@
          HOW IT WORKS
     ====================================================== -->
 
-    <section class="section" id="how-it-works">
+    <section class="section steps-section" id="how-it-works">
       <div class="section-inner">
         <div class="section-heading">
           <div class="label">How It Works</div>
@@ -1057,6 +1477,34 @@
     </section>
 
     <!-- =====================================================
+         EXPORT YOUR LEADS
+    ====================================================== -->
+
+    <section class="section export-section">
+      <div class="section-inner">
+        <div class="image-content-grid reverse">
+          <div class="content-text">
+            <h3>📥 Export Your Leads</h3>
+
+            <p>
+              Once you have reviewed your search results, export your leads and
+              continue working with them on your computer. Keep your research
+              organized and ready for your next marketing step.
+            </p>
+          </div>
+
+          <div class="section-image-wrap export-image">
+            <img
+              src="{{ url_for('static', filename='images/lead-finder.jpg') }}"
+              alt="Lead Finder results and business leads"
+              class="section-image"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================
          CTA
     ====================================================== -->
 
@@ -1068,6 +1516,13 @@
           Start discovering businesses by location and keyword with Google Maps
           Lead Finder.
         </p>
+        <div class="cta-image-wrap">
+          <img
+            src="{{ url_for('static', filename='images/final-lead-generation.jpg') }}"
+            alt="Lead generation and business research"
+            class="cta-image"
+          />
+        </div>
 
         <a href="{{ url_for('auth.google_login') }}" class="primary-button">
           🔐 Login with Google

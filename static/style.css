@@ -824,3 +824,80 @@ td a:hover {
     font-size: 13px !important;
   }
 }
+/* =========================================================
+   HOME PAGE - ANIMATED BACKGROUND
+========================================================= */
+
+body.home-page {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+
+  background: #061512;
+}
+
+/* =========================================================
+   BACKGROUND IMAGE - NO GREEN OVERLAY
+========================================================= */
+
+body.home-page::before {
+  content: "";
+
+  position: fixed;
+
+  top: -5%;
+  left: -5%;
+
+  width: 110%;
+  height: 110%;
+
+  z-index: -2;
+
+  pointer-events: none;
+
+  background-image: url("/static/images/home-bg.jpg");
+
+  background-position: center center;
+
+  background-size: cover;
+
+  background-repeat: no-repeat;
+
+  animation: homeBackgroundMove 25s ease-in-out infinite alternate;
+}
+
+/* =========================================================
+   NO COLOR GLOW
+========================================================= */
+
+body.home-page::after {
+  content: "";
+
+  position: fixed;
+
+  inset: 0;
+
+  z-index: -1;
+
+  pointer-events: none;
+
+  background: transparent;
+}
+
+/* =========================================================
+   BACKGROUND MOVEMENT
+========================================================= */
+
+@keyframes homeBackgroundMove {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: scale(1.04) translate3d(-0.5%, 0.3%, 0);
+  }
+
+  100% {
+    transform: scale(1.08) translate3d(0.5%, -0.3%, 0);
+  }
+}
