@@ -14,8 +14,8 @@
 
     <style>
       /* =====================================================
-       CUSTOM DROPDOWN
-    ===================================================== */
+         CUSTOM DROPDOWN
+      ===================================================== */
 
       .custom-select {
         position: relative;
@@ -25,7 +25,6 @@
       .select-trigger {
         width: 100%;
         height: 46px;
-
         padding: 0 14px;
 
         border: 1px solid #d5dce0;
@@ -77,8 +76,8 @@
       }
 
       /* =====================================================
-       DROPDOWN MENU
-    ===================================================== */
+         DROPDOWN MENU
+      ===================================================== */
 
       .select-menu {
         position: absolute;
@@ -111,8 +110,8 @@
       }
 
       /* =====================================================
-       DROPDOWN SEARCH
-    ===================================================== */
+         DROPDOWN SEARCH
+      ===================================================== */
 
       .dropdown-search {
         position: sticky;
@@ -151,8 +150,8 @@
       }
 
       /* =====================================================
-       DROPDOWN OPTIONS
-    ===================================================== */
+         DROPDOWN OPTIONS
+      ===================================================== */
 
       .select-options {
         padding: 5px;
@@ -193,8 +192,8 @@
       }
 
       /* =====================================================
-       DROPDOWN SCROLLBAR
-    ===================================================== */
+         DROPDOWN SCROLLBAR
+      ===================================================== */
 
       .select-menu::-webkit-scrollbar {
         width: 7px;
@@ -211,8 +210,8 @@
       }
 
       /* =====================================================
-       LEAD TABLE
-    ===================================================== */
+         LEAD TABLE
+      ===================================================== */
 
       .table-container {
         overflow-x: auto;
@@ -238,14 +237,112 @@
       td a:hover {
         text-decoration: underline;
       }
+
+      /* =====================================================
+         BACKEND PAGINATION
+      ===================================================== */
+
+      .pagination-container {
+        display: none;
+
+        justify-content: center;
+
+        align-items: center;
+
+        gap: 8px;
+
+        margin-top: 25px;
+
+        flex-wrap: wrap;
+      }
+
+      .pagination-button,
+      .pagination-number {
+        min-width: 40px;
+
+        height: 38px;
+
+        padding: 0 12px;
+
+        border: 1px solid #d5dce0;
+
+        border-radius: 8px;
+
+        background: white;
+
+        color: #17202a;
+
+        font-size: 14px;
+
+        font-weight: 600;
+
+        cursor: pointer;
+
+        transition:
+          background 0.2s,
+          border-color 0.2s,
+          color 0.2s;
+      }
+
+      .pagination-button:hover:not(:disabled),
+      .pagination-number:hover {
+        border-color: #1f6f50;
+
+        color: #1f6f50;
+
+        background: #eef5f1;
+      }
+
+      .pagination-button:disabled {
+        opacity: 0.45;
+
+        cursor: not-allowed;
+      }
+
+      .pagination-number.active {
+        background: #1f6f50;
+
+        border-color: #1f6f50;
+
+        color: white;
+      }
+
+      .pagination-numbers {
+        display: flex;
+
+        align-items: center;
+
+        gap: 6px;
+
+        flex-wrap: wrap;
+
+        justify-content: center;
+      }
+
+      @media (max-width: 600px) {
+        .pagination-container {
+          gap: 5px;
+        }
+
+        .pagination-button,
+        .pagination-number {
+          min-width: 36px;
+
+          height: 36px;
+
+          padding: 0 9px;
+
+          font-size: 13px;
+        }
+      }
     </style>
   </head>
 
   <body>
     <div class="container">
       <!-- ===================================================
-         HEADER
-    ==================================================== -->
+           HEADER
+      ==================================================== -->
 
       <header class="hero">
         <h1>Google Maps Lead Finder</h1>
@@ -254,8 +351,8 @@
       </header>
 
       <!-- ===================================================
-         SEARCH
-    ==================================================== -->
+           SEARCH
+      ==================================================== -->
 
       <section class="search-card">
         <!-- COUNTRY -->
@@ -338,14 +435,14 @@
       </section>
 
       <!-- ===================================================
-         STATUS
-    ==================================================== -->
+           STATUS
+      ==================================================== -->
 
       <section id="status" class="status"></section>
 
       <!-- ===================================================
-         RESULTS
-    ==================================================== -->
+           RESULTS
+      ==================================================== -->
 
       <section class="results-section">
         <div class="results-header">
@@ -378,7 +475,9 @@
           </div>
         </div>
 
-        <!-- TABLE -->
+        <!-- =================================================
+             TABLE
+        ================================================== -->
 
         <div class="table-container">
           <table>
@@ -417,8 +516,28 @@
             <tbody id="resultsBody"></tbody>
           </table>
         </div>
+
+        <!-- =================================================
+             BACKEND PAGINATION
+        ================================================== -->
+
+        <div class="pagination-container" id="paginationContainer">
+          <button id="prevPageButton" class="pagination-button" disabled>
+            ← Previous
+          </button>
+
+          <div id="paginationNumbers" class="pagination-numbers"></div>
+
+          <button id="nextPageButton" class="pagination-button" disabled>
+            Next →
+          </button>
+        </div>
       </section>
     </div>
+
+    <!-- =====================================================
+         MAIN JAVASCRIPT
+    ====================================================== -->
 
     <script>
       // =====================================================
@@ -602,6 +721,8 @@
         cityOptions.innerHTML = "";
 
         loadCities();
+
+        resetPagination();
       }
 
       // =====================================================
@@ -628,7 +749,10 @@
             const text = await response.text();
 
             throw new Error(
-              `Countries API failed (${response.status}): ${text.substring(0, 200)}`,
+              `Countries API failed (${response.status}): ${text.substring(
+                0,
+                200,
+              )}`,
             );
           }
 
@@ -636,7 +760,10 @@
             const text = await response.text();
 
             throw new Error(
-              `Countries API returned non-JSON response: ${text.substring(0, 200)}`,
+              `Countries API returned non-JSON response: ${text.substring(
+                0,
+                200,
+              )}`,
             );
           }
 
@@ -716,6 +843,8 @@
         cityText.textContent = city;
 
         closeDropdowns();
+
+        resetPagination();
       }
 
       // =====================================================
@@ -766,7 +895,10 @@
             const text = await response.text();
 
             throw new Error(
-              `Cities API failed (${response.status}): ${text.substring(0, 200)}`,
+              `Cities API failed (${response.status}): ${text.substring(
+                0,
+                200,
+              )}`,
             );
           }
 
@@ -774,7 +906,10 @@
             const text = await response.text();
 
             throw new Error(
-              `Cities API returned non-JSON response: ${text.substring(0, 200)}`,
+              `Cities API returned non-JSON response: ${text.substring(
+                0,
+                200,
+              )}`,
             );
           }
 
@@ -847,9 +982,9 @@
 
         const excelButton = document.getElementById("excelButton");
 
-        // ===================================================
+        // =================================================
         // VALIDATION
-        // ===================================================
+        // =================================================
 
         if (!country) {
           status.className = "status error";
@@ -875,9 +1010,9 @@
           return;
         }
 
-        // ===================================================
-        // RESET
-        // ===================================================
+        // =================================================
+        // NEW SEARCH
+        // =================================================
 
         currentResults = [];
 
@@ -885,17 +1020,33 @@
 
         excelButton.disabled = true;
 
+        // IMPORTANT:
+        // Purana search_id clear karo.
+        // New search ke liye naya cache create hoga.
+
+        if (typeof resetPagination === "function") {
+          resetPagination();
+        }
+
+        // =================================================
+        // LOADING
+        // =================================================
+
         button.disabled = true;
 
         button.textContent = "Scraping leads...";
 
         status.className = "status loading";
 
-        status.textContent = "Searching Google Maps and scraping websites...";
+        status.textContent = `Searching ${city}, ${country}...`;
 
         resultsBody.innerHTML = "";
 
-        resultCount.textContent = "0 results";
+        resultCount.textContent = "Searching...";
+
+        // =================================================
+        // SEARCH API
+        // =================================================
 
         try {
           const response = await fetch("/api/search", {
@@ -911,10 +1062,16 @@
               city: city,
 
               keyword: keyword,
+
+              page: 1,
             }),
           });
 
           const contentType = response.headers.get("content-type") || "";
+
+          // ===============================================
+          // ERROR
+          // ===============================================
 
           if (!response.ok) {
             if (contentType.includes("application/json")) {
@@ -930,6 +1087,10 @@
             );
           }
 
+          // ===============================================
+          // JSON CHECK
+          // ===============================================
+
           if (!contentType.includes("application/json")) {
             const text = await response.text();
 
@@ -938,39 +1099,89 @@
             );
           }
 
+          // ===============================================
+          // RESPONSE
+          // ===============================================
+
           const data = await response.json();
 
           if (!data.success) {
             throw new Error(data.message || "Search failed.");
           }
 
-          // =================================================
-          // SAVE RESULTS
-          // =================================================
+          // ===============================================
+          // SAVE SEARCH ID
+          // ===============================================
+
+          if (!data.search_id) {
+            throw new Error("Search ID was not returned by server.");
+          }
+
+          setSearchId(data.search_id);
+          // ===============================================
+          // BACKEND RESULTS
+          // ===============================================
 
           currentResults = Array.isArray(data.results) ? data.results : [];
 
-          // =================================================
-          // DISPLAY
-          // =================================================
+          // ===============================================
+          // PAGINATION DATA
+          // ===============================================
 
-          displayResults(currentResults);
+          const pagination = data.pagination || {};
 
-          resultCount.textContent = `${currentResults.length} results`;
+          const current = Number(pagination.page || 1);
 
-          // =================================================
-          // ENABLE EXPORT
-          // =================================================
+          const backendTotal = Number(pagination.total || 0);
+
+          const backendTotalPages = Number(pagination.total_pages || 0);
+
+          const total = backendTotal > 0 ? backendTotal : currentResults.length;
+
+          const totalPages =
+            backendTotalPages > 0
+              ? backendTotalPages
+              : Math.max(1, Math.ceil(total / 15));
+
+          // ===============================================
+          // DISPLAY RESULTS
+          // ===============================================
+
+          displayResults(currentResults, current);
+
+          // ===============================================
+          // RESULT COUNT
+          // ===============================================
+
+          resultCount.textContent = `${total} results`;
+
+          // ===============================================
+          // EXPORT BUTTONS
+          // ===============================================
 
           if (currentResults.length > 0) {
             csvButton.disabled = false;
 
             excelButton.disabled = false;
+          } else {
+            csvButton.disabled = true;
+
+            excelButton.disabled = true;
           }
+
+          // ===============================================
+          // STATUS
+          // ===============================================
 
           status.className = "status success";
 
-          status.textContent = `Found ${currentResults.length} businesses and checked their websites for contact/social information.`;
+          status.textContent = `Showing page ${current} of ${totalPages}. ${total} businesses found.`;
+
+          // ===============================================
+          // UPDATE PAGINATION
+          // ===============================================
+
+          updateBackendPagination(pagination);
         } catch (error) {
           console.error("Search Error:", error);
 
@@ -988,173 +1199,158 @@
       // DISPLAY RESULTS
       // =====================================================
 
-      function displayResults(results) {
+      function displayResults(results, page = 1) {
         const resultsBody = document.getElementById("resultsBody");
 
         resultsBody.innerHTML = "";
 
+        // =================================================
+        // NO RESULTS
+        // =================================================
+
         if (!results.length) {
           resultsBody.innerHTML = `
 
-          <tr>
+            <tr>
 
-            <td
-              colspan="14"
-              class="no-results"
-            >
-              No businesses found.
-            </td>
+              <td
+                colspan="14"
+                class="no-results"
+              >
+                No businesses found.
+              </td>
 
-          </tr>
+            </tr>
 
-        `;
+          `;
 
           return;
         }
 
-        results.forEach(function (place, index) {
-          // =============================================
-          // WEBSITE
-          // =============================================
+        // =================================================
+        // RESULT NUMBER
+        // =================================================
 
-          const website = place.website
-            ? `
+        const startIndex = (page - 1) * 15;
 
-                <a
-                  href="${escapeHtml(place.website)}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Website
-                </a>
+        // =================================================
+        // RENDER
+        // =================================================
 
-              `
-            : "-";
+        renderResultRows(results, startIndex);
+      }
 
-          // =============================================
-          // EMAIL
-          // =============================================
+      // =====================================================
+      // CREATE RESULT ROW
+      // =====================================================
 
-          const email = place.email
-            ? `
+      function createResultRow(place, resultNumber) {
+        const website = place.website
+          ? `
 
-                <a
-                  href="mailto:${escapeHtml(place.email)}"
-                >
-                  ${escapeHtml(place.email)}
-                </a>
+              <a
+                href="${escapeHtml(place.website)}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Website
+              </a>
 
-              `
-            : "-";
+            `
+          : "-";
 
-          // =============================================
-          // FACEBOOK
-          // =============================================
+        const email = place.email
+          ? `
 
-          const facebook = place.facebook
-            ? `
+              <a
+                href="mailto:${escapeHtml(place.email)}"
+              >
+                ${escapeHtml(place.email)}
+              </a>
 
-                <a
-                  href="${escapeHtml(place.facebook)}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Facebook
-                </a>
+            `
+          : "-";
 
-              `
-            : "-";
+        const facebook = place.facebook
+          ? `
 
-          // =============================================
-          // INSTAGRAM
-          // =============================================
+              <a
+                href="${escapeHtml(place.facebook)}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Facebook
+              </a>
 
-          const instagram = place.instagram
-            ? `
+            `
+          : "-";
 
-                <a
-                  href="${escapeHtml(place.instagram)}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Instagram
-                </a>
+        const instagram = place.instagram
+          ? `
 
-              `
-            : "-";
+              <a
+                href="${escapeHtml(place.instagram)}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Instagram
+              </a>
 
-          // =============================================
-          // LINKEDIN
-          // =============================================
+            `
+          : "-";
 
-          const linkedin = place.linkedin
-            ? `
+        const linkedin = place.linkedin
+          ? `
 
-                <a
-                  href="${escapeHtml(place.linkedin)}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  LinkedIn
-                </a>
+              <a
+                href="${escapeHtml(place.linkedin)}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                LinkedIn
+              </a>
 
-              `
-            : "-";
+            `
+          : "-";
 
-          // =============================================
-          // TWITTER / X
-          // =============================================
+        const twitter = place.twitter
+          ? `
 
-          const twitter = place.twitter
-            ? `
+              <a
+                href="${escapeHtml(place.twitter)}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Twitter / X
+              </a>
 
-                <a
-                  href="${escapeHtml(place.twitter)}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Twitter / X
-                </a>
+            `
+          : "-";
 
-              `
-            : "-";
+        const otherSocial = place.other_social
+          ? escapeHtml(place.other_social)
+          : "-";
 
-          // =============================================
-          // OTHER SOCIAL
-          // =============================================
+        const maps = place.maps_url
+          ? `
 
-          const otherSocial = place.other_social
-            ? escapeHtml(place.other_social)
-            : "-";
+              <a
+                href="${escapeHtml(place.maps_url)}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                📍 Open Maps
+              </a>
 
-          // =============================================
-          // GOOGLE MAPS
-          // =============================================
+            `
+          : "-";
 
-          const maps = place.maps_url
-            ? `
+        return `
 
-                <a
-                  href="${escapeHtml(place.maps_url)}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  📍 Open Maps
-                </a>
-
-              `
-            : "-";
-
-          // =============================================
-          // ROW
-          // =============================================
-
-          const row = document.createElement("tr");
-
-          row.innerHTML = `
+          <tr>
 
             <td>
-              ${index + 1}
+              ${resultNumber}
             </td>
 
 
@@ -1226,9 +1422,26 @@
               ${maps}
             </td>
 
-          `;
+          </tr>
 
-          resultsBody.appendChild(row);
+        `;
+      }
+
+      // =====================================================
+      // RENDER RESULT ROWS
+      // =====================================================
+
+      function renderResultRows(results, startIndex = 0) {
+        const resultsBody = document.getElementById("resultsBody");
+
+        results.forEach(function (place, index) {
+          const resultNumber = startIndex + index + 1;
+
+          resultsBody.insertAdjacentHTML(
+            "beforeend",
+
+            createResultRow(place, resultNumber),
+          );
         });
       }
 
@@ -1268,7 +1481,10 @@
             const text = await response.text();
 
             throw new Error(
-              `CSV export failed (${response.status}): ${text.substring(0, 200)}`,
+              `CSV export failed (${response.status}): ${text.substring(
+                0,
+                200,
+              )}`,
             );
           }
 
@@ -1278,7 +1494,7 @@
         } catch (error) {
           console.error("CSV Export Error:", error);
 
-          alert(error.message);
+          alert(error.message || "CSV export failed.");
         }
       }
 
@@ -1318,7 +1534,10 @@
             const text = await response.text();
 
             throw new Error(
-              `Excel export failed (${response.status}): ${text.substring(0, 200)}`,
+              `Excel export failed (${response.status}): ${text.substring(
+                0,
+                200,
+              )}`,
             );
           }
 
@@ -1328,7 +1547,7 @@
         } catch (error) {
           console.error("Excel Export Error:", error);
 
-          alert(error.message);
+          alert(error.message || "Excel export failed.");
         }
       }
 
@@ -1388,5 +1607,11 @@
         loadCountries();
       });
     </script>
+
+    <!-- =====================================================
+         BACKEND PAGINATION JAVASCRIPT
+    ====================================================== -->
+
+    <script src="{{ url_for('static', filename='pagination.js') }}"></script>
   </body>
 </html>

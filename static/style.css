@@ -696,4 +696,131 @@ td a:hover {
 
     font-size: 12px;
   }
+} /* =====================================================
+   PAGINATION
+===================================================== */
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 25px;
+  flex-wrap: wrap;
+}
+
+/* Previous + Next */
+
+.pagination-button {
+  height: 42px !important;
+  min-width: 105px !important;
+
+  padding: 0 18px !important;
+
+  background: #166534 !important;
+  color: #ffffff !important;
+
+  border: 1px solid #166534 !important;
+  border-radius: 8px !important;
+
+  font-size: 14px !important;
+  font-weight: 600 !important;
+
+  cursor: pointer !important;
+
+  opacity: 1 !important;
+
+  transition: all 0.2s ease;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background: #14532d !important;
+  color: #ffffff !important;
+
+  border-color: #14532d !important;
+
+  transform: translateY(-1px);
+}
+
+.pagination-button:disabled {
+  background: #d1d5db !important;
+  color: #6b7280 !important;
+
+  border-color: #d1d5db !important;
+
+  opacity: 1 !important;
+
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* =====================================================
+   PAGE NUMBERS
+===================================================== */
+
+.pagination-numbers {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pagination-numbers button {
+  height: 40px !important;
+  min-width: 40px !important;
+
+  padding: 0 12px !important;
+
+  background: #ffffff !important;
+  color: #166534 !important;
+
+  border: 1px solid #166534 !important;
+  border-radius: 7px !important;
+
+  font-size: 14px !important;
+  font-weight: 600 !important;
+
+  cursor: pointer !important;
+
+  opacity: 1 !important;
+}
+
+.pagination-numbers button:hover {
+  background: #166534 !important;
+  color: #ffffff !important;
+}
+
+.pagination-numbers button.active {
+  background: #166534 !important;
+  color: #ffffff !important;
+
+  border-color: #166534 !important;
+}
+
+/* =====================================================
+   MOBILE PAGINATION
+===================================================== */
+
+@media (max-width: 700px) {
+  .pagination-container {
+    gap: 6px;
+    margin-top: 20px;
+  }
+
+  .pagination-button {
+    min-width: 90px !important;
+    height: 40px !important;
+
+    padding: 0 12px !important;
+
+    font-size: 13px !important;
+  }
+
+  .pagination-numbers button {
+    min-width: 36px !important;
+    height: 36px !important;
+
+    padding: 0 9px !important;
+
+    font-size: 13px !important;
+  }
 }
