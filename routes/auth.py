@@ -18,6 +18,10 @@ auth_bp = Blueprint(
 oauth = OAuth()
 
 
+# =====================================================
+# INITIALIZE GOOGLE OAUTH
+# =====================================================
+
 def init_oauth(app):
 
     oauth.init_app(app)
@@ -79,7 +83,8 @@ def google_callback():
         "picture": user_info.get("picture"),
     }
 
-    # Directly open Leads after login
+    session.permanent = True
+
     return redirect(
         url_for("leads")
     )
@@ -92,7 +97,7 @@ def google_callback():
 @auth_bp.route("/logout")
 def logout():
 
-    session.pop("user", None)
+    session.clear()
 
     return redirect(
         url_for("home")

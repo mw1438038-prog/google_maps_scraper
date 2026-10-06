@@ -6,6 +6,8 @@ from flask import (
     session,
 )
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 from config import Config
 
 from routes.locations import locations_bp
@@ -27,6 +29,17 @@ def create_app():
     # =====================================================
 
     app.config.from_object(Config)
+
+    # =====================================================
+    # VERCEL / PROXY
+    # =====================================================
+
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app,
+        x_for=1,
+        x_proto=1,
+        x_host=1,
+    )
 
     # =====================================================
     # GOOGLE OAUTH
