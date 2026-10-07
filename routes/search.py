@@ -1,3 +1,4 @@
+
 from concurrent.futures import (
     ThreadPoolExecutor,
     as_completed,
@@ -25,6 +26,13 @@ from routes.pagination import (
 from routes.search_cache import (
     save_search,
     get_search,
+)
+
+from routes.usage import (
+    get_current_user,
+    can_search,
+    consume_search,
+    get_usage,
 )
 
 
@@ -60,17 +68,13 @@ def scrape_one_website(place):
     place["twitter"] = ""
     place["other_social"] = ""
 
-
     website = place.get(
         "website",
         ""
     )
 
-
     if not website:
-
         return place
-
 
     try:
 
@@ -80,18 +84,15 @@ def scrape_one_website(place):
             )
         )
 
-
         if scraped_data:
 
             place.update(
                 scraped_data
             )
 
-
     except Exception:
 
         pass
-
 
     return place
 
@@ -103,32 +104,22 @@ def scrape_one_website(place):
 def scrape_results(results):
 
     places_with_websites = [
-
         place
-
         for place in results
-
         if place.get(
             "website",
             ""
         )
-
     ]
 
-
     places_without_websites = [
-
         place
-
         for place in results
-
         if not place.get(
             "website",
             ""
         )
-
     ]
-
 
     # =================================================
     # EMPTY SOCIAL FIELDS
@@ -143,13 +134,11 @@ def scrape_results(results):
         place["twitter"] = ""
         place["other_social"] = ""
 
-
     # =================================================
     # SCRAPE WEBSITES
     # =================================================
 
     scraped_results = []
-
 
     if places_with_websites:
 
@@ -164,11 +153,9 @@ def scrape_results(results):
                     place
                 )
 
-                for place
-                in places_with_websites
+                for place in places_with_websites
 
             ]
-
 
             for future in as_completed(
                 futures
@@ -188,7 +175,6 @@ def scrape_results(results):
 
                     continue
 
-
     # =================================================
     # MAP SCRAPED RESULTS
     # =================================================
@@ -203,20 +189,17 @@ def scrape_results(results):
 
     }
 
-
     # =================================================
     # FINAL RESULTS
     # =================================================
 
     final_results = []
 
-
     for place in results:
 
         place_id = place.get(
             "id"
         )
-
 
         if place_id in result_map:
 
@@ -232,12 +215,15 @@ def scrape_results(results):
                 place
             )
 
-
     return final_results
 
 
 # =====================================================
-# GET PAGINATED RESULTS
+# APP PAGINATION
+#
+# Always 15 results per page.
+#
+# Completely separate from Google API pagination.
 # =====================================================
 
 def get_page_results(
@@ -257,6 +243,92 @@ def get_page_results(
 
 
 # =====================================================
+# SEARCH LIMIT / SUBSCRIPTION MESSAGE
+# =====================================================
+
+def get_limit_message(user):
+
+    plan = (
+        user.plan or "free"
+    ).lower().strip()
+
+    subscription_status = (
+        user.subscription_status
+        or "inactive"
+    ).lower().strip()
+
+    # =================================================
+    # EXPIRED PAID SUBSCRIPTION
+    # =================================================
+
+    if (
+        plan in (
+            "pro",
+            "business",
+        )
+        and subscription_status == "expired"
+    ):
+
+        plan_name = (
+            "Pro"
+            if plan == "pro"
+            else "Business"
+        )
+
+        return (
+            f"Your {plan_name} subscription "
+            "has expired. Please renew your "
+            "subscription to continue searching."
+        )
+
+    # =================================================
+    # FREE PLAN
+    # =================================================
+
+    if plan == "free":
+
+        return (
+            "Your 10 Free searches have "
+            "been used. Your Free trial is "
+            "available only once. Please "
+            "upgrade to Pro or Business."
+        )
+
+    # =================================================
+    # PRO SEARCH LIMIT
+    # =================================================
+
+    if plan == "pro":
+
+        return (
+            "You have reached your monthly "
+            "Pro search limit. Please wait "
+            "for your next billing cycle "
+            "or upgrade your plan."
+        )
+
+    # =================================================
+    # BUSINESS SEARCH LIMIT
+    # =================================================
+
+    if plan == "business":
+
+        return (
+            "You have reached your monthly "
+            "Business search limit. Please "
+            "wait for your next billing cycle."
+        )
+
+    # =================================================
+    # DEFAULT
+    # =================================================
+
+    return (
+        "You have reached your search limit."
+    )
+
+
+# =====================================================
 # NEW SEARCH
 #
 # Google API is called ONLY here.
@@ -268,17 +340,63 @@ def get_page_results(
 )
 def search():
 
+    # =================================================
+    # CURRENT USER
+    # =================================================
+
+    user = get_current_user()
+
+    if not user:
+
+        return jsonify({
+
+            "success": False,
+
+            "message":
+                "Please login before searching.",
+
+        }), 401
+
+    # =================================================
+    # CHECK SEARCH / SUBSCRIPTION LIMIT
+    #
+    # IMPORTANT:
+    #
+    # This happens BEFORE Google API.
+    #
+    # Therefore:
+    #
+    # - expired Pro = no Google API
+    # - expired Business = no Google API
+    # - exhausted Free = no Google API
+    # - exhausted Pro = no Google API
+    # - exhausted Business = no Google API
+    # =================================================
+
+    if not can_search(user):
+
+        return jsonify({
+
+            "success": False,
+
+            "message":
+                get_limit_message(user),
+
+            "usage":
+                get_usage(user),
+
+        }), 403
+
+    # =================================================
+    # INPUT
+    # =================================================
+
     data = (
         request.get_json(
             silent=True
         )
         or {}
     )
-
-
-    # =================================================
-    # INPUT
-    # =================================================
 
     country = str(
         data.get(
@@ -287,7 +405,6 @@ def search():
         )
     ).strip()
 
-
     city = str(
         data.get(
             "city",
@@ -295,14 +412,12 @@ def search():
         )
     ).strip()
 
-
     keyword = str(
         data.get(
             "keyword",
             ""
         )
     ).strip()
-
 
     # =================================================
     # VALIDATION
@@ -319,7 +434,6 @@ def search():
 
         }), 400
 
-
     if not city:
 
         return jsonify({
@@ -330,7 +444,6 @@ def search():
                 "City is required.",
 
         }), 400
-
 
     if not keyword:
 
@@ -343,13 +456,10 @@ def search():
 
         }), 400
 
-
     try:
 
         # =============================================
-        # GOOGLE PLACES
-        #
-        # THIS RUNS ONLY FOR NEW SEARCH
+        # GOOGLE PLACES SERVICE
         # =============================================
 
         google_places = (
@@ -362,6 +472,23 @@ def search():
             )
         )
 
+        # =============================================
+        # USER PLAN
+        # =============================================
+
+        user_plan = (
+            user.plan or "free"
+        ).lower().strip()
+
+        # =============================================
+        # GOOGLE SEARCH
+        #
+        # Plan limits:
+        #
+        # Free     = 15
+        # Pro      = 100
+        # Business = 200
+        # =============================================
 
         search_data = (
             google_places.search_places(
@@ -372,9 +499,10 @@ def search():
 
                 keyword=keyword,
 
+                plan=user_plan,
+
             )
         )
-
 
         # =============================================
         # GOOGLE RESULTS
@@ -387,17 +515,51 @@ def search():
             )
         )
 
-
         print(
             f"[SEARCH] Google results: "
             f"{len(results)}"
         )
 
+        # =============================================
+        # GET PLAN RESULT LIMIT
+        # =============================================
+
+        usage = get_usage(
+            user
+        )
+
+        results_limit = usage.get(
+            "results_per_search",
+            15
+        )
+
+        # =============================================
+        # APPLY PLAN RESULT LIMIT
+        # =============================================
+
+        results = results[
+            :results_limit
+        ]
+
+        print(
+            f"[SEARCH] Plan: "
+            f"{user_plan}"
+        )
+
+        print(
+            f"[SEARCH] Plan result limit: "
+            f"{results_limit}"
+        )
+
+        print(
+            f"[SEARCH] Results after plan limit: "
+            f"{len(results)}"
+        )
 
         # =============================================
         # WEBSITE SCRAPING
         #
-        # ALSO ONLY RUNS FOR NEW SEARCH
+        # Only plan-limited results are scraped.
         # =============================================
 
         final_results = (
@@ -406,15 +568,39 @@ def search():
             )
         )
 
-
         print(
             f"[SEARCH] Final results: "
             f"{len(final_results)}"
         )
 
+        # =============================================
+        # CONSUME ONE SEARCH
+        #
+        # Only successful NEW searches consume
+        # one search credit.
+        # =============================================
+
+        if not consume_search(
+            user
+        ):
+
+            return jsonify({
+
+                "success": False,
+
+                "message":
+                    get_limit_message(user),
+
+                "usage":
+                    get_usage(user),
+
+            }), 403
 
         # =============================================
-        # SAVE COMPLETE SEARCH
+        # SAVE SEARCH IN CACHE
+        #
+        # Google Maps results are NOT stored in
+        # PostgreSQL.
         # =============================================
 
         search_id = save_search(
@@ -429,15 +615,15 @@ def search():
 
         )
 
-
         print(
             f"[SEARCH] Search ID: "
             f"{search_id}"
         )
 
-
         # =============================================
-        # FIRST PAGE
+        # FIRST APP PAGE
+        #
+        # Always 15 results.
         # =============================================
 
         pagination_data = (
@@ -450,6 +636,13 @@ def search():
             )
         )
 
+        # =============================================
+        # CURRENT USAGE
+        # =============================================
+
+        usage = get_usage(
+            user
+        )
 
         # =============================================
         # RETURN
@@ -457,8 +650,7 @@ def search():
 
         return jsonify({
 
-            "success":
-                True,
+            "success": True,
 
             "search_id":
                 search_id,
@@ -486,8 +678,10 @@ def search():
                     ""
                 ),
 
-        })
+            "usage":
+                usage,
 
+        })
 
     except Exception as error:
 
@@ -496,11 +690,9 @@ def search():
             error
         )
 
-
         return jsonify({
 
-            "success":
-                False,
+            "success": False,
 
             "message":
                 str(error),
@@ -512,10 +704,14 @@ def search():
 # PAGINATION PAGE
 #
 # IMPORTANT:
-# Google API is NOT called here.
-# Website scraper is NOT called here.
 #
-# Saved cache is used.
+# Google API is NOT called.
+#
+# Website scraper is NOT called.
+#
+# Search credit is NOT consumed.
+#
+# Cached results are used.
 # =====================================================
 
 @search_bp.route(
@@ -524,13 +720,16 @@ def search():
 )
 def search_page():
 
+    # =================================================
+    # INPUT
+    # =================================================
+
     data = (
         request.get_json(
             silent=True
         )
         or {}
     )
-
 
     # =================================================
     # SEARCH ID
@@ -543,7 +742,6 @@ def search_page():
         )
     ).strip()
 
-
     # =================================================
     # PAGE
     # =================================================
@@ -552,7 +750,6 @@ def search_page():
         "page",
         1
     )
-
 
     try:
 
@@ -567,11 +764,9 @@ def search_page():
 
         page = 1
 
-
     if page < 1:
 
         page = 1
-
 
     # =================================================
     # VALIDATE SEARCH ID
@@ -581,15 +776,13 @@ def search_page():
 
         return jsonify({
 
-            "success":
-                False,
+            "success": False,
 
             "message":
                 "Search session has expired. "
                 "Please perform a new search.",
 
         }), 400
-
 
     # =================================================
     # GET CACHED SEARCH
@@ -599,20 +792,17 @@ def search_page():
         search_id
     )
 
-
     if not search_data:
 
         return jsonify({
 
-            "success":
-                False,
+            "success": False,
 
             "message":
                 "Search session has expired. "
                 "Please perform a new search.",
 
         }), 404
-
 
     # =================================================
     # GET SAVED RESULTS
@@ -623,9 +813,12 @@ def search_page():
         []
     )
 
-
     # =================================================
-    # PAGINATE SAVED RESULTS
+    # APP PAGINATION
+    #
+    # Always 15 results per page.
+    #
+    # Google API is NOT called.
     # =================================================
 
     pagination_data = (
@@ -638,13 +831,11 @@ def search_page():
         )
     )
 
-
     pagination = (
         pagination_data[
             "pagination"
         ]
     )
-
 
     page_results = (
         pagination_data[
@@ -652,6 +843,9 @@ def search_page():
         ]
     )
 
+    # =================================================
+    # DEBUG
+    # =================================================
 
     print(
         f"[PAGINATION] "
@@ -660,15 +854,13 @@ def search_page():
         f"Total: {pagination['total']}"
     )
 
-
     # =================================================
     # RETURN
     # =================================================
 
     return jsonify({
 
-        "success":
-            True,
+        "success": True,
 
         "search_id":
             search_id,
@@ -692,3 +884,4 @@ def search_page():
             ),
 
     })
+

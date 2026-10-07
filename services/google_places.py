@@ -14,9 +14,19 @@ PLACES_SEARCH_URL = (
 
 GOOGLE_PAGE_SIZE = 20
 
-# Google Places Text Search maximum pages
-# 20 results × 4 pages = up to 80 results
-MAX_GOOGLE_PAGES = 4
+
+# =====================================================
+# PLAN RESULT LIMITS
+# =====================================================
+
+PLAN_RESULT_LIMITS = {
+
+    "free": 15,
+
+    "pro": 100,
+
+    "business": 200,
+}
 
 
 class GooglePlacesService:
@@ -43,7 +53,9 @@ class GooglePlacesService:
         if not value:
             return ""
 
-        value = str(value).strip().lower()
+        value = str(
+            value
+        ).strip().lower()
 
         value = re.sub(
             r"[,\.\-_/]+",
@@ -81,8 +93,10 @@ class GooglePlacesService:
 
             if name:
 
-                normalized = self._normalize(
-                    name
+                normalized = (
+                    self._normalize(
+                        name
+                    )
                 )
 
                 if normalized:
@@ -117,8 +131,10 @@ class GooglePlacesService:
 
             if name:
 
-                normalized = self._normalize(
-                    name
+                normalized = (
+                    self._normalize(
+                        name
+                    )
                 )
 
                 if normalized:
@@ -145,14 +161,16 @@ class GooglePlacesService:
         if not keyword:
             return ""
 
-        normalized_keyword = self._normalize(
-            keyword
+        normalized_keyword = (
+            self._normalize(
+                keyword
+            )
         )
 
         location_names = set()
 
         # -------------------------------------------------
-        # ADD ALL CITIES
+        # ALL CITIES
         # -------------------------------------------------
 
         location_names.update(
@@ -160,7 +178,7 @@ class GooglePlacesService:
         )
 
         # -------------------------------------------------
-        # ADD ALL COUNTRIES
+        # ALL COUNTRIES
         # -------------------------------------------------
 
         location_names.update(
@@ -168,15 +186,13 @@ class GooglePlacesService:
         )
 
         # -------------------------------------------------
-        # SELECTED CITY / COUNTRY
+        # SELECTED CITY
         # -------------------------------------------------
 
-        selected_city = self._normalize(
-            city
-        )
-
-        selected_country = self._normalize(
-            country
+        selected_city = (
+            self._normalize(
+                city
+            )
         )
 
         if selected_city:
@@ -184,6 +200,16 @@ class GooglePlacesService:
             location_names.add(
                 selected_city
             )
+
+        # -------------------------------------------------
+        # SELECTED COUNTRY
+        # -------------------------------------------------
+
+        selected_country = (
+            self._normalize(
+                country
+            )
+        )
 
         if selected_country:
 
@@ -255,13 +281,11 @@ class GooglePlacesService:
         if not keyword:
             return ""
 
-        cleaned = self._remove_location_names(
+        return self._remove_location_names(
             keyword=keyword,
             city=city,
             country=country
         )
-
-        return cleaned
 
     # =====================================================
     # BUILD SEARCH QUERY
@@ -274,10 +298,12 @@ class GooglePlacesService:
         keyword
     ):
 
-        clean_keyword = self._clean_keyword(
-            keyword,
-            city,
-            country
+        clean_keyword = (
+            self._clean_keyword(
+                keyword,
+                city,
+                country
+            )
         )
 
         # -------------------------------------------------
@@ -292,7 +318,7 @@ class GooglePlacesService:
             )
 
         # -------------------------------------------------
-        # ONLY LOCATION IN KEYWORD
+        # ONLY LOCATION
         # -------------------------------------------------
 
         return (
@@ -311,25 +337,33 @@ class GooglePlacesService:
         city
     ):
 
-        requested_country = self._normalize(
-            country
-        )
-
-        requested_city = self._normalize(
-            city
-        )
-
-        actual_country = self._normalize(
-            result.get(
-                "country",
-                ""
+        requested_country = (
+            self._normalize(
+                country
             )
         )
 
-        actual_city = self._normalize(
-            result.get(
-                "city",
-                ""
+        requested_city = (
+            self._normalize(
+                city
+            )
+        )
+
+        actual_country = (
+            self._normalize(
+                result.get(
+                    "country",
+                    ""
+                )
+            )
+        )
+
+        actual_city = (
+            self._normalize(
+                result.get(
+                    "city",
+                    ""
+                )
             )
         )
 
@@ -369,10 +403,6 @@ class GooglePlacesService:
         page_token=None
     ):
 
-        # =================================================
-        # HEADERS
-        # =================================================
-
         headers = {
 
             "Content-Type":
@@ -397,10 +427,6 @@ class GooglePlacesService:
             ),
         }
 
-        # =================================================
-        # PAYLOAD
-        # =================================================
-
         payload = {
 
             "textQuery":
@@ -410,9 +436,9 @@ class GooglePlacesService:
                 GOOGLE_PAGE_SIZE,
         }
 
-        # =================================================
-        # ADD PAGE TOKEN
-        # =================================================
+        # -------------------------------------------------
+        # NEXT PAGE TOKEN
+        # -------------------------------------------------
 
         if page_token:
 
@@ -420,9 +446,9 @@ class GooglePlacesService:
                 "pageToken"
             ] = page_token
 
-        # =================================================
+        # -------------------------------------------------
         # REQUEST
-        # =================================================
+        # -------------------------------------------------
 
         response = requests.post(
 
@@ -435,9 +461,9 @@ class GooglePlacesService:
             timeout=30,
         )
 
-        # =================================================
+        # -------------------------------------------------
         # ERROR
-        # =================================================
+        # -------------------------------------------------
 
         if not response.ok:
 
@@ -458,39 +484,67 @@ class GooglePlacesService:
                 f"{error_data}"
             )
 
-        # =================================================
-        # RETURN JSON
-        # =================================================
-
         return response.json()
+
+    # =====================================================
+    # GET PLAN RESULT LIMIT
+    # =====================================================
+
+    def _get_plan_result_limit(
+        self,
+        plan
+    ):
+
+        plan = str(
+            plan or "free"
+        ).lower().strip()
+
+        return PLAN_RESULT_LIMITS.get(
+            plan,
+            PLAN_RESULT_LIMITS["free"]
+        )
 
     # =====================================================
     # SEARCH PLACES
     #
-    # GOOGLE PAGINATION:
+    # GOOGLE PAGINATION IS INTERNAL
     #
-    # Google Page 1 → 20
-    # Google Page 2 → 20
-    # Google Page 3 → 20
-    # Google Page 4 → 20
+    # Free:
+    #   Google fetches only enough pages for 15 results
     #
-    # Then routes/pagination.py:
+    # Pro:
+    #   Google fetches up to 100 results
     #
-    # App Page 1 → 15
-    # App Page 2 → 15
-    # App Page 3 → 15
-    # App Page 4 → 15
+    # Business:
+    #   Google fetches up to 200 results
+    #
+    # APP PAGINATION IS SEPARATE
+    #
+    # App:
+    #   15 results per page
+    #
     # =====================================================
 
     def search_places(
         self,
         country,
         city,
-        keyword
+        keyword,
+        plan="free"
     ):
 
         # =================================================
-        # BUILD SEARCH QUERY
+        # PLAN LIMIT
+        # =================================================
+
+        result_limit = (
+            self._get_plan_result_limit(
+                plan
+            )
+        )
+
+        # =================================================
+        # BUILD QUERY
         # =================================================
 
         search_query = (
@@ -506,6 +560,16 @@ class GooglePlacesService:
             f"{search_query}"
         )
 
+        print(
+            f"[Google Places] Plan: "
+            f"{plan}"
+        )
+
+        print(
+            f"[Google Places] Result limit: "
+            f"{result_limit}"
+        )
+
         # =================================================
         # ALL GOOGLE RESULTS
         # =================================================
@@ -514,13 +578,15 @@ class GooglePlacesService:
 
         page_token = None
 
+        google_page = 1
+
         # =================================================
         # GOOGLE PAGINATION
         # =================================================
 
-        for google_page in range(
-            1,
-            MAX_GOOGLE_PAGES + 1
+        while (
+            len(all_results)
+            < result_limit
         ):
 
             print(
@@ -529,18 +595,20 @@ class GooglePlacesService:
                 f"{google_page}"
             )
 
-            # ---------------------------------------------
+            # -------------------------------------------------
             # GOOGLE REQUEST
-            # ---------------------------------------------
+            # -------------------------------------------------
 
-            data = self._google_search_request(
-                search_query=search_query,
-                page_token=page_token
+            data = (
+                self._google_search_request(
+                    search_query=search_query,
+                    page_token=page_token
+                )
             )
 
-            # ---------------------------------------------
+            # -------------------------------------------------
             # FORMAT RESULTS
-            # ---------------------------------------------
+            # -------------------------------------------------
 
             formatted_results = (
                 self._format_results(
@@ -554,17 +622,17 @@ class GooglePlacesService:
                 f"{len(formatted_results)} results"
             )
 
-            # ---------------------------------------------
+            # -------------------------------------------------
             # ADD RESULTS
-            # ---------------------------------------------
+            # -------------------------------------------------
 
             all_results.extend(
                 formatted_results
             )
 
-            # ---------------------------------------------
+            # -------------------------------------------------
             # NEXT PAGE TOKEN
-            # ---------------------------------------------
+            # -------------------------------------------------
 
             next_page_token = (
                 data.get(
@@ -572,9 +640,9 @@ class GooglePlacesService:
                 )
             )
 
-            # ---------------------------------------------
+            # -------------------------------------------------
             # NO MORE PAGES
-            # ---------------------------------------------
+            # -------------------------------------------------
 
             if not next_page_token:
 
@@ -585,15 +653,32 @@ class GooglePlacesService:
 
                 break
 
-            # ---------------------------------------------
+            # -------------------------------------------------
+            # CHECK IF ENOUGH RESULTS
+            # -------------------------------------------------
+
+            if len(all_results) >= result_limit:
+
+                print(
+                    "[Google Places] "
+                    "Plan result limit reached."
+                )
+
+                break
+
+            # -------------------------------------------------
             # NEXT PAGE
-            # ---------------------------------------------
+            # -------------------------------------------------
 
-            page_token = next_page_token
+            page_token = (
+                next_page_token
+            )
 
-        # =================================================
+            google_page += 1
+
+        # =====================================================
         # REMOVE DUPLICATES
-        # =================================================
+        # =====================================================
 
         unique_results = []
 
@@ -619,9 +704,9 @@ class GooglePlacesService:
                 result
             )
 
-        # =================================================
+        # =====================================================
         # STRICT LOCATION FILTER
-        # =================================================
+        # =====================================================
 
         filtered_results = []
 
@@ -637,9 +722,19 @@ class GooglePlacesService:
                     result
                 )
 
-        # =================================================
+        # =====================================================
+        # APPLY PLAN LIMIT AFTER FILTER
+        # =====================================================
+
+        filtered_results = (
+            filtered_results[
+                :result_limit
+            ]
+        )
+
+        # =====================================================
         # DEBUG
-        # =================================================
+        # =====================================================
 
         print(
             f"[Google Places] "
@@ -653,9 +748,15 @@ class GooglePlacesService:
             f"{len(filtered_results)}"
         )
 
-        # =================================================
+        print(
+            f"[Google Places] "
+            f"Final plan results: "
+            f"{len(filtered_results)}"
+        )
+
+        # =====================================================
         # RETURN
-        # =================================================
+        # =====================================================
 
         return {
 
@@ -687,9 +788,9 @@ class GooglePlacesService:
             []
         ):
 
-            # ---------------------------------------------
+            # -------------------------------------------------
             # LOCATION
-            # ---------------------------------------------
+            # -------------------------------------------------
 
             location_data = (
                 self._get_location_components(
@@ -711,9 +812,9 @@ class GooglePlacesService:
                 )
             )
 
-            # ---------------------------------------------
+            # -------------------------------------------------
             # NAME
-            # ---------------------------------------------
+            # -------------------------------------------------
 
             display_name = (
                 place.get(
@@ -729,9 +830,9 @@ class GooglePlacesService:
                 )
             )
 
-            # ---------------------------------------------
+            # -------------------------------------------------
             # RESULT
-            # ---------------------------------------------
+            # -------------------------------------------------
 
             results.append({
 
@@ -826,19 +927,14 @@ class GooglePlacesService:
             )
 
             name = (
-
                 component.get(
                     "longText"
                 )
-
                 or
-
                 component.get(
                     "shortText"
                 )
-
                 or
-
                 ""
             )
 

@@ -9,353 +9,91 @@
 
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
+      href="{{ url_for(
+            'static',
+            filename='style.css'
+        ) }}"
     />
-
-    <style>
-      /* =====================================================
-         CUSTOM DROPDOWN
-      ===================================================== */
-
-      .custom-select {
-        position: relative;
-        width: 100%;
-      }
-
-      .select-trigger {
-        width: 100%;
-        height: 46px;
-        padding: 0 14px;
-
-        border: 1px solid #d5dce0;
-        border-radius: 10px;
-
-        background: white;
-        color: #17202a;
-
-        font-size: 15px;
-        font-family: Arial, Helvetica, sans-serif;
-
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-
-        cursor: pointer;
-
-        transition:
-          border-color 0.2s,
-          box-shadow 0.2s;
-      }
-
-      .select-trigger:hover {
-        border-color: #1f6f50;
-      }
-
-      .custom-select.open .select-trigger {
-        border-color: #1f6f50;
-
-        box-shadow: 0 0 0 3px rgba(31, 111, 80, 0.1);
-      }
-
-      .select-arrow {
-        font-size: 12px;
-
-        transition: transform 0.2s ease;
-      }
-
-      .custom-select.open .select-arrow {
-        transform: rotate(180deg);
-      }
-
-      .select-trigger.disabled {
-        background: #f1f4f3;
-
-        color: #8a969d;
-
-        cursor: not-allowed;
-      }
-
-      /* =====================================================
-         DROPDOWN MENU
-      ===================================================== */
-
-      .select-menu {
-        position: absolute;
-
-        top: calc(100% + 6px);
-
-        left: 0;
-
-        width: 100%;
-
-        max-height: 280px;
-
-        overflow-y: auto;
-
-        background: white;
-
-        border: 1px solid #d5dce0;
-
-        border-radius: 10px;
-
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
-
-        z-index: 1000;
-
-        display: none;
-      }
-
-      .custom-select.open .select-menu {
-        display: block;
-      }
-
-      /* =====================================================
-         DROPDOWN SEARCH
-      ===================================================== */
-
-      .dropdown-search {
-        position: sticky;
-
-        top: 0;
-
-        padding: 10px;
-
-        background: white;
-
-        border-bottom: 1px solid #e8edef;
-
-        z-index: 2;
-      }
-
-      .dropdown-search input {
-        width: 100%;
-
-        height: 38px;
-
-        padding: 0 10px;
-
-        border: 1px solid #d5dce0;
-
-        border-radius: 8px;
-
-        outline: none;
-
-        font-size: 14px;
-      }
-
-      .dropdown-search input:focus {
-        border-color: #1f6f50;
-
-        box-shadow: 0 0 0 2px rgba(31, 111, 80, 0.08);
-      }
-
-      /* =====================================================
-         DROPDOWN OPTIONS
-      ===================================================== */
-
-      .select-options {
-        padding: 5px;
-      }
-
-      .select-option {
-        padding: 10px 11px;
-
-        border-radius: 7px;
-
-        font-size: 14px;
-
-        color: #17202a;
-
-        cursor: pointer;
-      }
-
-      .select-option:hover {
-        background: #eef5f1;
-
-        color: #1f6f50;
-      }
-
-      .select-option.selected {
-        background: #e7f6ed;
-
-        color: #1f6f50;
-
-        font-weight: 600;
-      }
-
-      .select-option.disabled {
-        color: #8a969d;
-
-        cursor: not-allowed;
-
-        background: transparent;
-      }
-
-      /* =====================================================
-         DROPDOWN SCROLLBAR
-      ===================================================== */
-
-      .select-menu::-webkit-scrollbar {
-        width: 7px;
-      }
-
-      .select-menu::-webkit-scrollbar-track {
-        background: #f1f3f4;
-      }
-
-      .select-menu::-webkit-scrollbar-thumb {
-        background: #b8c2c7;
-
-        border-radius: 10px;
-      }
-
-      /* =====================================================
-         LEAD TABLE
-      ===================================================== */
-
-      .table-container {
-        overflow-x: auto;
-      }
-
-      table {
-        min-width: 1800px;
-      }
-
-      th,
-      td {
-        white-space: nowrap;
-      }
-
-      td a {
-        color: #1f6f50;
-
-        font-weight: 600;
-
-        text-decoration: none;
-      }
-
-      td a:hover {
-        text-decoration: underline;
-      }
-
-      /* =====================================================
-         BACKEND PAGINATION
-      ===================================================== */
-
-      .pagination-container {
-        display: none;
-
-        justify-content: center;
-
-        align-items: center;
-
-        gap: 8px;
-
-        margin-top: 25px;
-
-        flex-wrap: wrap;
-      }
-
-      .pagination-button,
-      .pagination-number {
-        min-width: 40px;
-
-        height: 38px;
-
-        padding: 0 12px;
-
-        border: 1px solid #d5dce0;
-
-        border-radius: 8px;
-
-        background: white;
-
-        color: #17202a;
-
-        font-size: 14px;
-
-        font-weight: 600;
-
-        cursor: pointer;
-
-        transition:
-          background 0.2s,
-          border-color 0.2s,
-          color 0.2s;
-      }
-
-      .pagination-button:hover:not(:disabled),
-      .pagination-number:hover {
-        border-color: #1f6f50;
-
-        color: #1f6f50;
-
-        background: #eef5f1;
-      }
-
-      .pagination-button:disabled {
-        opacity: 0.45;
-
-        cursor: not-allowed;
-      }
-
-      .pagination-number.active {
-        background: #1f6f50;
-
-        border-color: #1f6f50;
-
-        color: white;
-      }
-
-      .pagination-numbers {
-        display: flex;
-
-        align-items: center;
-
-        gap: 6px;
-
-        flex-wrap: wrap;
-
-        justify-content: center;
-      }
-
-      @media (max-width: 600px) {
-        .pagination-container {
-          gap: 5px;
-        }
-
-        .pagination-button,
-        .pagination-number {
-          min-width: 36px;
-
-          height: 36px;
-
-          padding: 0 9px;
-
-          font-size: 13px;
-        }
-      }
-    </style>
   </head>
 
   <body>
     <div class="container">
       <!-- ===================================================
-           HEADER
-      ==================================================== -->
+         HEADER
+    ==================================================== -->
 
       <header class="hero">
-        <h1>Google Maps Lead Finder</h1>
+        <div class="hero-top">
+          <div class="hero-content">
+            <h1>Google Maps Lead Finder</h1>
 
-        <p>Find businesses by country, city and keyword</p>
+            <p>Find businesses by country, city and keyword</p>
+          </div>
+
+          <!-- =================================================
+                 USER ACTIONS
+            ================================================== -->
+
+          <div class="header-actions">
+            <a href="/pricing" class="header-action-button plan-button-link">
+              💎 Change Plan
+            </a>
+
+            <a href="/auth/logout" class="header-action-button logout-button">
+              🚪 Logout
+            </a>
+          </div>
+        </div>
       </header>
 
       <!-- ===================================================
-           SEARCH
-      ==================================================== -->
+         PLAN BADGE
+    ==================================================== -->
+
+      <div id="planBadge" class="plan-badge plan-free">
+        <!-- =================================================
+             LEFT
+        ================================================== -->
+
+        <div class="plan-badge-left">
+          <div id="planIcon" class="plan-icon">✓</div>
+
+          <div class="plan-info">
+            <div id="planName" class="plan-name">Free Plan</div>
+
+            <div id="planDescription" class="plan-description">
+              0 of 10 searches used
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================
+             RIGHT
+        ================================================== -->
+
+        <div class="plan-badge-right">
+          <div class="plan-usage">
+            <span id="usageRemaining" class="usage-remaining"> 10 </span>
+
+            <span class="usage-label"> Searches Left </span>
+          </div>
+
+          <!-- =================================================
+                 CHANGE PLAN
+            ================================================== -->
+
+          <a href="/pricing" class="change-plan-button"> Change Plan </a>
+        </div>
+      </div>
+
+      <!-- ===================================================
+         SEARCH
+    ==================================================== -->
 
       <section class="search-card">
-        <!-- COUNTRY -->
+        <!-- =================================================
+             COUNTRY
+        ================================================== -->
 
         <div class="form-group">
           <label> Country </label>
@@ -382,7 +120,9 @@
           </div>
         </div>
 
-        <!-- CITY -->
+        <!-- =================================================
+             CITY
+        ================================================== -->
 
         <div class="form-group">
           <label> City </label>
@@ -414,7 +154,9 @@
           </div>
         </div>
 
-        <!-- KEYWORD -->
+        <!-- =================================================
+             KEYWORD
+        ================================================== -->
 
         <div class="form-group">
           <label for="keyword"> Keyword </label>
@@ -427,7 +169,9 @@
           />
         </div>
 
-        <!-- SEARCH BUTTON -->
+        <!-- =================================================
+             SEARCH BUTTON
+        ================================================== -->
 
         <button id="searchButton" onclick="searchPlaces()">
           🔍 Search Google Maps
@@ -435,16 +179,20 @@
       </section>
 
       <!-- ===================================================
-           STATUS
-      ==================================================== -->
+         STATUS
+    ==================================================== -->
 
       <section id="status" class="status"></section>
 
       <!-- ===================================================
-           RESULTS
-      ==================================================== -->
+         RESULTS
+    ==================================================== -->
 
       <section class="results-section">
+        <!-- =================================================
+             RESULTS HEADER
+        ================================================== -->
+
         <div class="results-header">
           <div class="results-title">
             <h2>Search Results</h2>
@@ -452,7 +200,9 @@
             <span id="resultCount"> 0 results </span>
           </div>
 
-          <!-- EXPORT -->
+          <!-- =================================================
+                 EXPORT BUTTONS
+            ================================================== -->
 
           <div class="export-buttons">
             <button
@@ -536,1082 +286,17 @@
     </div>
 
     <!-- =====================================================
-         MAIN JAVASCRIPT
-    ====================================================== -->
-
-    <script>
-      // =====================================================
-      // GLOBAL DATA
-      // =====================================================
-
-      let currentResults = [];
-
-      let countries = [];
-
-      let cities = [];
-
-      let selectedCountry = "";
-
-      let selectedCity = "";
-
-      // =====================================================
-      // ELEMENTS
-      // =====================================================
-
-      const countryDropdown = document.getElementById("countryDropdown");
-
-      const cityDropdown = document.getElementById("cityDropdown");
-
-      const countryTrigger = document.getElementById("countryTrigger");
-
-      const cityTrigger = document.getElementById("cityTrigger");
-
-      const countryText = document.getElementById("countryText");
-
-      const cityText = document.getElementById("cityText");
-
-      const countryOptions = document.getElementById("countryOptions");
-
-      const cityOptions = document.getElementById("cityOptions");
-
-      const countrySearch = document.getElementById("countrySearch");
-
-      const citySearch = document.getElementById("citySearch");
-
-      // =====================================================
-      // CLOSE DROPDOWNS
-      // =====================================================
-
-      function closeDropdowns() {
-        countryDropdown.classList.remove("open");
-
-        cityDropdown.classList.remove("open");
-      }
-
-      // =====================================================
-      // COUNTRY DROPDOWN
-      // =====================================================
-
-      countryTrigger.addEventListener("click", function () {
-        if (countryTrigger.disabled) {
-          return;
-        }
-
-        const isOpen = countryDropdown.classList.contains("open");
-
-        closeDropdowns();
-
-        if (!isOpen) {
-          countryDropdown.classList.add("open");
-
-          countrySearch.value = "";
-
-          renderCountries();
-
-          setTimeout(function () {
-            countrySearch.focus();
-          }, 50);
-        }
-      });
-
-      // =====================================================
-      // CITY DROPDOWN
-      // =====================================================
-
-      cityTrigger.addEventListener("click", function () {
-        if (cityTrigger.disabled) {
-          return;
-        }
-
-        const isOpen = cityDropdown.classList.contains("open");
-
-        closeDropdowns();
-
-        if (!isOpen) {
-          cityDropdown.classList.add("open");
-
-          citySearch.value = "";
-
-          renderCities();
-
-          setTimeout(function () {
-            citySearch.focus();
-          }, 50);
-        }
-      });
-
-      // =====================================================
-      // CLICK OUTSIDE
-      // =====================================================
-
-      document.addEventListener("click", function (event) {
-        if (
-          !countryDropdown.contains(event.target) &&
-          !cityDropdown.contains(event.target)
-        ) {
-          closeDropdowns();
-        }
-      });
-
-      // =====================================================
-      // RENDER COUNTRIES
-      // =====================================================
-
-      function renderCountries(searchValue = "") {
-        countryOptions.innerHTML = "";
-
-        const search = searchValue.toLowerCase().trim();
-
-        const filtered = countries.filter(function (country) {
-          return country.toLowerCase().includes(search);
-        });
-
-        if (!filtered.length) {
-          const empty = document.createElement("div");
-
-          empty.className = "select-option disabled";
-
-          empty.textContent = "No countries found.";
-
-          countryOptions.appendChild(empty);
-
-          return;
-        }
-
-        filtered.forEach(function (country) {
-          const option = document.createElement("div");
-
-          option.className = "select-option";
-
-          if (country === selectedCountry) {
-            option.classList.add("selected");
-          }
-
-          option.textContent = country;
-
-          option.addEventListener("click", function () {
-            selectCountry(country);
-          });
-
-          countryOptions.appendChild(option);
-        });
-      }
-
-      // =====================================================
-      // SELECT COUNTRY
-      // =====================================================
-
-      function selectCountry(country) {
-        selectedCountry = country;
-
-        selectedCity = "";
-
-        countryText.textContent = country;
-
-        cityText.textContent = "Loading cities...";
-
-        cityTrigger.disabled = true;
-
-        cityTrigger.classList.add("disabled");
-
-        closeDropdowns();
-
-        cities = [];
-
-        cityOptions.innerHTML = "";
-
-        loadCities();
-
-        resetPagination();
-      }
-
-      // =====================================================
-      // COUNTRY SEARCH
-      // =====================================================
-
-      countrySearch.addEventListener("input", function () {
-        renderCountries(countrySearch.value);
-      });
-
-      // =====================================================
-      // LOAD COUNTRIES
-      // =====================================================
-
-      async function loadCountries() {
-        const status = document.getElementById("status");
-
-        try {
-          const response = await fetch("/api/countries");
-
-          const contentType = response.headers.get("content-type") || "";
-
-          if (!response.ok) {
-            const text = await response.text();
-
-            throw new Error(
-              `Countries API failed (${response.status}): ${text.substring(
-                0,
-                200,
-              )}`,
-            );
-          }
-
-          if (!contentType.includes("application/json")) {
-            const text = await response.text();
-
-            throw new Error(
-              `Countries API returned non-JSON response: ${text.substring(
-                0,
-                200,
-              )}`,
-            );
-          }
-
-          const data = await response.json();
-
-          if (!data.success) {
-            throw new Error(data.message || "Could not load countries.");
-          }
-
-          countries = Array.isArray(data.countries) ? data.countries : [];
-
-          countryText.textContent = "Select Country";
-
-          renderCountries();
-        } catch (error) {
-          console.error("Countries Error:", error);
-
-          countryText.textContent = "Could not load countries";
-
-          status.className = "status error";
-
-          status.textContent = error.message;
-        }
-      }
-
-      // =====================================================
-      // RENDER CITIES
-      // =====================================================
-
-      function renderCities(searchValue = "") {
-        cityOptions.innerHTML = "";
-
-        const search = searchValue.toLowerCase().trim();
-
-        const filtered = cities.filter(function (city) {
-          return city.toLowerCase().includes(search);
-        });
-
-        if (!filtered.length) {
-          const empty = document.createElement("div");
-
-          empty.className = "select-option disabled";
-
-          empty.textContent = "No cities found.";
-
-          cityOptions.appendChild(empty);
-
-          return;
-        }
-
-        filtered.forEach(function (city) {
-          const option = document.createElement("div");
-
-          option.className = "select-option";
-
-          if (city === selectedCity) {
-            option.classList.add("selected");
-          }
-
-          option.textContent = city;
-
-          option.addEventListener("click", function () {
-            selectCity(city);
-          });
-
-          cityOptions.appendChild(option);
-        });
-      }
-
-      // =====================================================
-      // SELECT CITY
-      // =====================================================
-
-      function selectCity(city) {
-        selectedCity = city;
-
-        cityText.textContent = city;
-
-        closeDropdowns();
-
-        resetPagination();
-      }
-
-      // =====================================================
-      // CITY SEARCH
-      // =====================================================
-
-      citySearch.addEventListener("input", function () {
-        renderCities(citySearch.value);
-      });
-
-      // =====================================================
-      // LOAD CITIES
-      // =====================================================
-
-      async function loadCities() {
-        const status = document.getElementById("status");
-
-        if (!selectedCountry) {
-          cityText.textContent = "Select country first";
-
-          cityTrigger.disabled = true;
-
-          cityTrigger.classList.add("disabled");
-
-          return;
-        }
-
-        status.className = "status loading";
-
-        status.textContent = `Loading cities of ${selectedCountry}...`;
-
-        try {
-          const response = await fetch("/api/cities", {
-            method: "POST",
-
-            headers: {
-              "Content-Type": "application/json",
-            },
-
-            body: JSON.stringify({
-              country: selectedCountry,
-            }),
-          });
-
-          const contentType = response.headers.get("content-type") || "";
-
-          if (!response.ok) {
-            const text = await response.text();
-
-            throw new Error(
-              `Cities API failed (${response.status}): ${text.substring(
-                0,
-                200,
-              )}`,
-            );
-          }
-
-          if (!contentType.includes("application/json")) {
-            const text = await response.text();
-
-            throw new Error(
-              `Cities API returned non-JSON response: ${text.substring(
-                0,
-                200,
-              )}`,
-            );
-          }
-
-          const data = await response.json();
-
-          if (!data.success) {
-            throw new Error(data.message || "Could not load cities.");
-          }
-
-          cities = Array.isArray(data.cities) ? data.cities : [];
-
-          cityText.textContent = "Select City";
-
-          renderCities();
-
-          if (cities.length > 0) {
-            cityTrigger.disabled = false;
-
-            cityTrigger.classList.remove("disabled");
-
-            status.className = "status success";
-
-            status.textContent = `${cities.length} cities loaded for ${selectedCountry}.`;
-          } else {
-            cityTrigger.disabled = true;
-
-            cityTrigger.classList.add("disabled");
-
-            status.className = "status error";
-
-            status.textContent = `No cities found for ${selectedCountry}.`;
-          }
-        } catch (error) {
-          console.error("Cities Error:", error);
-
-          cities = [];
-
-          cityText.textContent = "Could not load cities";
-
-          cityTrigger.disabled = true;
-
-          cityTrigger.classList.add("disabled");
-
-          status.className = "status error";
-
-          status.textContent = error.message;
-        }
-      }
-
-      // =====================================================
-      // SEARCH PLACES
-      // =====================================================
-
-      async function searchPlaces() {
-        const country = selectedCountry;
-
-        const city = selectedCity;
-
-        const keyword = document.getElementById("keyword").value.trim();
-
-        const button = document.getElementById("searchButton");
-
-        const status = document.getElementById("status");
-
-        const resultsBody = document.getElementById("resultsBody");
-
-        const resultCount = document.getElementById("resultCount");
-
-        const csvButton = document.getElementById("csvButton");
-
-        const excelButton = document.getElementById("excelButton");
-
-        // =================================================
-        // VALIDATION
-        // =================================================
-
-        if (!country) {
-          status.className = "status error";
-
-          status.textContent = "Please select a country.";
-
-          return;
-        }
-
-        if (!city) {
-          status.className = "status error";
-
-          status.textContent = "Please select a city.";
-
-          return;
-        }
-
-        if (!keyword) {
-          status.className = "status error";
-
-          status.textContent = "Please enter a keyword.";
-
-          return;
-        }
-
-        // =================================================
-        // NEW SEARCH
-        // =================================================
-
-        currentResults = [];
-
-        csvButton.disabled = true;
-
-        excelButton.disabled = true;
-
-        // IMPORTANT:
-        // Purana search_id clear karo.
-        // New search ke liye naya cache create hoga.
-
-        if (typeof resetPagination === "function") {
-          resetPagination();
-        }
-
-        // =================================================
-        // LOADING
-        // =================================================
-
-        button.disabled = true;
-
-        button.textContent = "Scraping leads...";
-
-        status.className = "status loading";
-
-        status.textContent = `Searching ${city}, ${country}...`;
-
-        resultsBody.innerHTML = "";
-
-        resultCount.textContent = "Searching...";
-
-        // =================================================
-        // SEARCH API
-        // =================================================
-
-        try {
-          const response = await fetch("/api/search", {
-            method: "POST",
-
-            headers: {
-              "Content-Type": "application/json",
-            },
-
-            body: JSON.stringify({
-              country: country,
-
-              city: city,
-
-              keyword: keyword,
-
-              page: 1,
-            }),
-          });
-
-          const contentType = response.headers.get("content-type") || "";
-
-          // ===============================================
-          // ERROR
-          // ===============================================
-
-          if (!response.ok) {
-            if (contentType.includes("application/json")) {
-              const error = await response.json();
-
-              throw new Error(error.message || "Search failed.");
-            }
-
-            const text = await response.text();
-
-            throw new Error(
-              `Search failed (${response.status}): ${text.substring(0, 200)}`,
-            );
-          }
-
-          // ===============================================
-          // JSON CHECK
-          // ===============================================
-
-          if (!contentType.includes("application/json")) {
-            const text = await response.text();
-
-            throw new Error(
-              `Server returned non-JSON response: ${text.substring(0, 200)}`,
-            );
-          }
-
-          // ===============================================
-          // RESPONSE
-          // ===============================================
-
-          const data = await response.json();
-
-          if (!data.success) {
-            throw new Error(data.message || "Search failed.");
-          }
-
-          // ===============================================
-          // SAVE SEARCH ID
-          // ===============================================
-
-          if (!data.search_id) {
-            throw new Error("Search ID was not returned by server.");
-          }
-
-          setSearchId(data.search_id);
-          // ===============================================
-          // BACKEND RESULTS
-          // ===============================================
-
-          currentResults = Array.isArray(data.results) ? data.results : [];
-
-          // ===============================================
-          // PAGINATION DATA
-          // ===============================================
-
-          const pagination = data.pagination || {};
-
-          const current = Number(pagination.page || 1);
-
-          const backendTotal = Number(pagination.total || 0);
-
-          const backendTotalPages = Number(pagination.total_pages || 0);
-
-          const total = backendTotal > 0 ? backendTotal : currentResults.length;
-
-          const totalPages =
-            backendTotalPages > 0
-              ? backendTotalPages
-              : Math.max(1, Math.ceil(total / 15));
-
-          // ===============================================
-          // DISPLAY RESULTS
-          // ===============================================
-
-          displayResults(currentResults, current);
-
-          // ===============================================
-          // RESULT COUNT
-          // ===============================================
-
-          resultCount.textContent = `${total} results`;
-
-          // ===============================================
-          // EXPORT BUTTONS
-          // ===============================================
-
-          if (currentResults.length > 0) {
-            csvButton.disabled = false;
-
-            excelButton.disabled = false;
-          } else {
-            csvButton.disabled = true;
-
-            excelButton.disabled = true;
-          }
-
-          // ===============================================
-          // STATUS
-          // ===============================================
-
-          status.className = "status success";
-
-          status.textContent = `Showing page ${current} of ${totalPages}. ${total} businesses found.`;
-
-          // ===============================================
-          // UPDATE PAGINATION
-          // ===============================================
-
-          updateBackendPagination(pagination);
-        } catch (error) {
-          console.error("Search Error:", error);
-
-          status.className = "status error";
-
-          status.textContent = error.message || "Search failed.";
-        } finally {
-          button.disabled = false;
-
-          button.textContent = "🔍 Search Google Maps";
-        }
-      }
-
-      // =====================================================
-      // DISPLAY RESULTS
-      // =====================================================
-
-      function displayResults(results, page = 1) {
-        const resultsBody = document.getElementById("resultsBody");
-
-        resultsBody.innerHTML = "";
-
-        // =================================================
-        // NO RESULTS
-        // =================================================
-
-        if (!results.length) {
-          resultsBody.innerHTML = `
-
-            <tr>
-
-              <td
-                colspan="14"
-                class="no-results"
-              >
-                No businesses found.
-              </td>
-
-            </tr>
-
-          `;
-
-          return;
-        }
-
-        // =================================================
-        // RESULT NUMBER
-        // =================================================
-
-        const startIndex = (page - 1) * 15;
-
-        // =================================================
-        // RENDER
-        // =================================================
-
-        renderResultRows(results, startIndex);
-      }
-
-      // =====================================================
-      // CREATE RESULT ROW
-      // =====================================================
-
-      function createResultRow(place, resultNumber) {
-        const website = place.website
-          ? `
-
-              <a
-                href="${escapeHtml(place.website)}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Website
-              </a>
-
-            `
-          : "-";
-
-        const email = place.email
-          ? `
-
-              <a
-                href="mailto:${escapeHtml(place.email)}"
-              >
-                ${escapeHtml(place.email)}
-              </a>
-
-            `
-          : "-";
-
-        const facebook = place.facebook
-          ? `
-
-              <a
-                href="${escapeHtml(place.facebook)}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Facebook
-              </a>
-
-            `
-          : "-";
-
-        const instagram = place.instagram
-          ? `
-
-              <a
-                href="${escapeHtml(place.instagram)}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Instagram
-              </a>
-
-            `
-          : "-";
-
-        const linkedin = place.linkedin
-          ? `
-
-              <a
-                href="${escapeHtml(place.linkedin)}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                LinkedIn
-              </a>
-
-            `
-          : "-";
-
-        const twitter = place.twitter
-          ? `
-
-              <a
-                href="${escapeHtml(place.twitter)}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Twitter / X
-              </a>
-
-            `
-          : "-";
-
-        const otherSocial = place.other_social
-          ? escapeHtml(place.other_social)
-          : "-";
-
-        const maps = place.maps_url
-          ? `
-
-              <a
-                href="${escapeHtml(place.maps_url)}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                📍 Open Maps
-              </a>
-
-            `
-          : "-";
-
-        return `
-
-          <tr>
-
-            <td>
-              ${resultNumber}
-            </td>
-
-
-            <td>
-
-              <strong>
-                ${escapeHtml(place.name)}
-              </strong>
-
-            </td>
-
-
-            <td>
-              ${escapeHtml(place.phone || "-")}
-            </td>
-
-
-            <td>
-              ${website}
-            </td>
-
-
-            <td>
-              ${email}
-            </td>
-
-
-            <td>
-              ${facebook}
-            </td>
-
-
-            <td>
-              ${instagram}
-            </td>
-
-
-            <td>
-              ${linkedin}
-            </td>
-
-
-            <td>
-              ${twitter}
-            </td>
-
-
-            <td>
-              ${otherSocial}
-            </td>
-
-
-            <td>
-              ${escapeHtml(place.address || "-")}
-            </td>
-
-
-            <td>
-              ⭐ ${place.rating || "-"}
-            </td>
-
-
-            <td>
-              ${place.reviews || "-"}
-            </td>
-
-
-            <td>
-              ${maps}
-            </td>
-
-          </tr>
-
-        `;
-      }
-
-      // =====================================================
-      // RENDER RESULT ROWS
-      // =====================================================
-
-      function renderResultRows(results, startIndex = 0) {
-        const resultsBody = document.getElementById("resultsBody");
-
-        results.forEach(function (place, index) {
-          const resultNumber = startIndex + index + 1;
-
-          resultsBody.insertAdjacentHTML(
-            "beforeend",
-
-            createResultRow(place, resultNumber),
-          );
-        });
-      }
-
-      // =====================================================
-      // EXPORT CSV
-      // =====================================================
-
-      async function exportCSV() {
-        if (!currentResults.length) {
-          alert("No leads available to export.");
-
-          return;
-        }
-
-        try {
-          const response = await fetch("/api/export/csv", {
-            method: "POST",
-
-            headers: {
-              "Content-Type": "application/json",
-            },
-
-            body: JSON.stringify({
-              results: currentResults,
-            }),
-          });
-
-          if (!response.ok) {
-            const contentType = response.headers.get("content-type") || "";
-
-            if (contentType.includes("application/json")) {
-              const error = await response.json();
-
-              throw new Error(error.message || "CSV export failed.");
-            }
-
-            const text = await response.text();
-
-            throw new Error(
-              `CSV export failed (${response.status}): ${text.substring(
-                0,
-                200,
-              )}`,
-            );
-          }
-
-          const blob = await response.blob();
-
-          downloadFile(blob, "google_maps_leads.csv");
-        } catch (error) {
-          console.error("CSV Export Error:", error);
-
-          alert(error.message || "CSV export failed.");
-        }
-      }
-
-      // =====================================================
-      // EXPORT EXCEL
-      // =====================================================
-
-      async function exportExcel() {
-        if (!currentResults.length) {
-          alert("No leads available to export.");
-
-          return;
-        }
-
-        try {
-          const response = await fetch("/api/export/excel", {
-            method: "POST",
-
-            headers: {
-              "Content-Type": "application/json",
-            },
-
-            body: JSON.stringify({
-              results: currentResults,
-            }),
-          });
-
-          if (!response.ok) {
-            const contentType = response.headers.get("content-type") || "";
-
-            if (contentType.includes("application/json")) {
-              const error = await response.json();
-
-              throw new Error(error.message || "Excel export failed.");
-            }
-
-            const text = await response.text();
-
-            throw new Error(
-              `Excel export failed (${response.status}): ${text.substring(
-                0,
-                200,
-              )}`,
-            );
-          }
-
-          const blob = await response.blob();
-
-          downloadFile(blob, "google_maps_leads.xlsx");
-        } catch (error) {
-          console.error("Excel Export Error:", error);
-
-          alert(error.message || "Excel export failed.");
-        }
-      }
-
-      // =====================================================
-      // DOWNLOAD FILE
-      // =====================================================
-
-      function downloadFile(blob, filename) {
-        const url = window.URL.createObjectURL(blob);
-
-        const link = document.createElement("a");
-
-        link.href = url;
-
-        link.download = filename;
-
-        document.body.appendChild(link);
-
-        link.click();
-
-        link.remove();
-
-        setTimeout(function () {
-          window.URL.revokeObjectURL(url);
-        }, 100);
-      }
-
-      // =====================================================
-      // ESCAPE HTML
-      // =====================================================
-
-      function escapeHtml(value) {
-        const div = document.createElement("div");
-
-        div.textContent = value ?? "";
-
-        return div.innerHTML;
-      }
-
-      // =====================================================
-      // ENTER KEY
-      // =====================================================
-
-      document
-        .getElementById("keyword")
-        .addEventListener("keydown", function (event) {
-          if (event.key === "Enter") {
-            searchPlaces();
-          }
-        });
-
-      // =====================================================
-      // LOAD COUNTRIES
-      // =====================================================
-
-      document.addEventListener("DOMContentLoaded", function () {
-        loadCountries();
-      });
-    </script>
-
-    <!-- =====================================================
-         BACKEND PAGINATION JAVASCRIPT
-    ====================================================== -->
-
-    <script src="{{ url_for('static', filename='pagination.js') }}"></script>
+     MAIN JAVASCRIPT
+====================================================== -->
+
+    <script src="{{ url_for(
+        'static',
+        filename='app.js'
+    ) }}"></script>
+
+    <script src="{{ url_for(
+        'static',
+        filename='pagination.js'
+    ) }}"></script>
   </body>
 </html>

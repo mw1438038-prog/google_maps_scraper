@@ -1,0 +1,532 @@
+/* =====================================================
+   RESET
+===================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+
+  font-family: Inter, Arial, sans-serif;
+
+  background: linear-gradient(135deg, #f5f8f6, #eef5f1);
+
+  color: #18352a;
+
+  min-height: 100vh;
+}
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.pricing-header {
+  background: linear-gradient(135deg, #174c38, #267052);
+
+  padding: 18px 30px;
+
+  box-shadow: 0 4px 20px rgba(20, 80, 55, 0.15);
+}
+
+.header-content {
+  max-width: 1180px;
+
+  margin: auto;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+}
+
+.brand {
+  color: white;
+
+  text-decoration: none;
+
+  font-size: 22px;
+
+  font-weight: 800;
+}
+
+.back-button {
+  color: white;
+
+  text-decoration: none;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  padding: 9px 15px;
+
+  border: 1px solid rgba(255, 255, 255, 0.3);
+
+  border-radius: 8px;
+
+  transition: 0.2s ease;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* =====================================================
+   PAGE
+===================================================== */
+
+.pricing-page {
+  width: 100%;
+
+  max-width: 1180px;
+
+  margin: 0 auto;
+
+  padding: 60px 20px 80px;
+}
+
+/* =====================================================
+   INTRO
+===================================================== */
+
+.pricing-intro {
+  text-align: center;
+
+  max-width: 700px;
+
+  margin: 0 auto 35px;
+}
+
+.eyebrow {
+  display: inline-block;
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 1.5px;
+
+  color: #267052;
+
+  margin-bottom: 10px;
+}
+
+.pricing-intro h1 {
+  margin: 0 0 12px;
+
+  font-size: clamp(32px, 5vw, 48px);
+
+  line-height: 1.1;
+
+  color: #163d2d;
+}
+
+.pricing-intro p {
+  margin: 0;
+
+  color: #61766c;
+
+  font-size: 16px;
+
+  line-height: 1.6;
+}
+
+/* =====================================================
+   CURRENT PLAN
+===================================================== */
+
+.current-plan-box {
+  max-width: 500px;
+
+  margin: 0 auto 35px;
+
+  padding: 13px 18px;
+
+  border: 1px solid #d5e3dc;
+
+  border-radius: 12px;
+
+  background: white;
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  gap: 20px;
+
+  box-shadow: 0 4px 15px rgba(30, 80, 60, 0.06);
+}
+
+.current-plan-box span {
+  color: #71857b;
+
+  font-size: 13px;
+}
+
+.current-plan-box strong {
+  color: #267052;
+
+  font-size: 14px;
+}
+
+/* =====================================================
+   PRICING GRID
+===================================================== */
+
+.pricing-grid {
+  display: grid;
+
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  gap: 24px;
+
+  align-items: stretch;
+}
+
+/* =====================================================
+   PRICING CARD
+===================================================== */
+
+.pricing-card {
+  position: relative;
+
+  background: white;
+
+  border: 1px solid #dce7e2;
+
+  border-radius: 18px;
+
+  padding: 30px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  box-shadow: 0 8px 30px rgba(30, 70, 55, 0.07);
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.pricing-card:hover {
+  transform: translateY(-5px);
+
+  box-shadow: 0 15px 35px rgba(30, 70, 55, 0.12);
+}
+
+.pricing-card.selected {
+  border: 2px solid #267052;
+}
+
+/* =====================================================
+   MOST POPULAR
+===================================================== */
+
+.pro-card.featured {
+  border: 2px solid #7a55c7;
+}
+
+.popular-badge {
+  position: absolute;
+
+  top: -13px;
+
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  background: #7a55c7;
+
+  color: white;
+
+  padding: 6px 14px;
+
+  border-radius: 30px;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.7px;
+
+  white-space: nowrap;
+}
+
+/* =====================================================
+   PLAN CONTENT
+===================================================== */
+
+.plan-label {
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 1px;
+}
+
+.free-card .plan-label {
+  color: #267052;
+}
+
+.pro-card .plan-label {
+  color: #7048c2;
+}
+
+.business-card .plan-label {
+  color: #9a710d;
+}
+
+.pricing-card h2 {
+  margin: 7px 0 8px;
+
+  font-size: 27px;
+
+  color: #18352a;
+}
+
+.plan-description {
+  margin: 0;
+
+  min-height: 48px;
+
+  color: #718078;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+}
+
+/* =====================================================
+   PRICE
+===================================================== */
+
+.price {
+  margin: 25px 0;
+
+  display: flex;
+
+  align-items: baseline;
+}
+
+.currency {
+  font-size: 20px;
+
+  font-weight: 700;
+}
+
+.amount {
+  font-size: 48px;
+
+  font-weight: 800;
+
+  line-height: 1;
+}
+
+.period {
+  margin-left: 5px;
+
+  color: #77877f;
+
+  font-size: 12px;
+}
+
+/* =====================================================
+   PLAN BUTTON
+===================================================== */
+
+.plan-button {
+  width: 100%;
+
+  border: none;
+
+  border-radius: 10px;
+
+  padding: 13px 16px;
+
+  font-size: 14px;
+
+  font-weight: 800;
+
+  cursor: pointer;
+
+  background: #edf4f0;
+
+  color: #267052;
+
+  transition: 0.2s ease;
+}
+
+.plan-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+
+  background: #dfece5;
+}
+
+.plan-button.primary {
+  background: #7048c2;
+
+  color: white;
+}
+
+.plan-button.primary:hover:not(:disabled) {
+  background: #6037ad;
+}
+
+.plan-button:disabled {
+  cursor: default;
+
+  opacity: 0.65;
+}
+
+/* =====================================================
+   FEATURES
+===================================================== */
+
+.features {
+  list-style: none;
+
+  padding: 0;
+
+  margin: 28px 0 0;
+}
+
+.features li {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 8px 0;
+
+  color: #50645a;
+
+  font-size: 13px;
+}
+
+.features li span {
+  font-weight: 800;
+
+  color: #267052;
+}
+
+.pro-card .features li span {
+  color: #7048c2;
+}
+
+.business-card .features li span {
+  color: #9a710d;
+}
+
+/* =====================================================
+   STATUS
+===================================================== */
+
+.plan-status {
+  min-height: 24px;
+
+  margin: 25px auto 0;
+
+  text-align: center;
+
+  font-size: 14px;
+
+  font-weight: 600;
+}
+
+.plan-status.success {
+  color: #267052;
+}
+
+.plan-status.error {
+  color: #b83232;
+}
+
+.plan-status.loading {
+  color: #66756e;
+}
+
+/* =====================================================
+   TABLET
+===================================================== */
+
+@media (max-width: 900px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+
+    max-width: 520px;
+
+    margin: auto;
+  }
+
+  .pricing-card {
+    padding: 27px;
+  }
+}
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 600px) {
+  .pricing-header {
+    padding: 15px 16px;
+  }
+
+  .header-content {
+    gap: 10px;
+  }
+
+  .brand {
+    font-size: 18px;
+  }
+
+  .back-button {
+    font-size: 12px;
+
+    padding: 8px 10px;
+  }
+
+  .pricing-page {
+    padding: 40px 15px 60px;
+  }
+
+  .pricing-intro {
+    margin-bottom: 28px;
+  }
+
+  .pricing-intro h1 {
+    font-size: 32px;
+  }
+
+  .pricing-intro p {
+    font-size: 14px;
+  }
+
+  .current-plan-box {
+    margin-bottom: 30px;
+  }
+
+  .pricing-card {
+    padding: 24px;
+
+    border-radius: 15px;
+  }
+
+  .amount {
+    font-size: 42px;
+  }
+}

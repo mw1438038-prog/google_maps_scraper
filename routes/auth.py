@@ -7,6 +7,9 @@ from flask import (
 
 from authlib.integrations.flask_client import OAuth
 
+from extensions import db
+from models.user import User
+
 
 auth_bp = Blueprint(
     "auth",
@@ -68,22 +71,95 @@ def google_login():
 @auth_bp.route("/google/callback")
 def google_callback():
 
+    # -------------------------------------------------
+    # GET GOOGLE TOKEN
+    # -------------------------------------------------
+
     token = oauth.google.authorize_access_token()
+
+    # -------------------------------------------------
+    # GET USER INFO
+    # -------------------------------------------------
 
     user_info = token.get("userinfo")
 
     if not user_info:
-
         user_info = oauth.google.userinfo()
 
+    google_id = user_info.get("sub")
+    name = user_info.get("name")
+    email = user_info.get("email")
+    picture = user_info.get("picture")
+
+    # -------------------------------------------------
+    # VALIDATE GOOGLE DATA
+    # -------------------------------------------------
+
+    if not google_id or not email:
+
+        return (
+            "Google account information is incomplete.",
+            400
+        )
+
+    # =================================================
+    # FIND USER IN DATABASE
+    # =================================================
+
+    user = User.query.filter_by(
+        google_id=google_id
+    ).first()
+
+    # =================================================
+    # CREATE NEW USER
+    # =================================================
+
+    if not user:
+
+        user = User(
+            google_id=google_id,
+            name=name,
+            email=email,
+            picture=picture,
+            plan="free",
+        )
+
+        db.session.add(user)
+
+    # =================================================
+    # UPDATE EXISTING USER
+    # =================================================
+
+    else:
+
+        user.name = name
+        user.email = email
+        user.picture = picture
+
+    # =================================================
+    # SAVE DATABASE CHANGES
+    # =================================================
+
+    db.session.commit()
+
+    # =================================================
+    # FLASK SESSION
+    # =================================================
+
     session["user"] = {
-        "id": user_info.get("sub"),
-        "name": user_info.get("name"),
-        "email": user_info.get("email"),
-        "picture": user_info.get("picture"),
+        "id": user.id,
+        "google_id": user.google_id,
+        "name": user.name,
+        "email": user.email,
+        "picture": user.picture,
+        "plan": user.plan,
     }
 
     session.permanent = True
+
+    # =================================================
+    # DASHBOARD
+    # =================================================
 
     return redirect(
         url_for("leads")

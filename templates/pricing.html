@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Choose Your Plan - Lead Finder</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for(
+            'static',
+            filename='pricing.css'
+        ) }}"
+    />
+  </head>
+
+  <body>
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <header class="pricing-header">
+      <div class="header-content">
+        <a href="/leads" class="brand"> Lead Finder </a>
+
+        <a href="/leads" class="back-button"> ← Back to Dashboard </a>
+      </div>
+    </header>
+
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
+
+    <main class="pricing-page">
+      <section class="pricing-intro">
+        <span class="eyebrow"> SIMPLE PRICING </span>
+
+        <h1>Choose the Right Plan</h1>
+
+        <p>
+          Find more businesses and generate more leads with the plan that fits
+          your needs.
+        </p>
+      </section>
+
+      <!-- =================================================
+             PRICING CARDS
+        ================================================== -->
+
+      <section class="pricing-grid">
+        <!-- =================================================
+                 FREE
+            ================================================== -->
+
+        <div class="pricing-card free-card" data-plan="free">
+          <div class="card-top">
+            <span class="plan-label"> FREE </span>
+
+            <h2>Free</h2>
+
+            <p class="plan-description">
+              Get started with basic lead generation.
+            </p>
+          </div>
+
+          <div class="price">
+            <span class="currency"> $ </span>
+
+            <span class="amount"> 0 </span>
+
+            <span class="period"> / month </span>
+          </div>
+
+          <button class="plan-button" data-plan="free" type="button">
+            Choose Free
+          </button>
+
+          <ul class="features">
+            <li>
+              <span>✓</span>
+              10 searches / month
+            </li>
+
+            <li>
+              <span>✓</span>
+              15 results / search
+            </li>
+
+            <li>
+              <span>✓</span>
+              CSV export
+            </li>
+
+            <li>
+              <span>✓</span>
+              Excel export
+            </li>
+          </ul>
+        </div>
+
+        <!-- =================================================
+                 PRO
+            ================================================== -->
+
+        <div class="pricing-card pro-card featured" data-plan="pro">
+          <div class="popular-badge">MOST POPULAR</div>
+
+          <div class="card-top">
+            <span class="plan-label"> PRO </span>
+
+            <h2>Pro</h2>
+
+            <p class="plan-description">
+              For marketers and growing businesses.
+            </p>
+          </div>
+
+          <div class="price">
+            <span class="currency"> $ </span>
+
+            <span class="amount"> 12 </span>
+
+            <span class="period"> / month </span>
+          </div>
+
+          <button class="plan-button primary" data-plan="pro" type="button">
+            Upgrade to Pro
+          </button>
+
+          <ul class="features">
+            <li>
+              <span>✓</span>
+              100 searches / month
+            </li>
+
+            <li>
+              <span>✓</span>
+              100 results / search
+            </li>
+
+            <li>
+              <span>✓</span>
+              CSV export
+            </li>
+
+            <li>
+              <span>✓</span>
+              Excel export
+            </li>
+
+            <li>
+              <span>✓</span>
+              Priority lead generation
+            </li>
+          </ul>
+        </div>
+
+        <!-- =================================================
+                 BUSINESS
+            ================================================== -->
+
+        <div class="pricing-card business-card" data-plan="business">
+          <div class="card-top">
+            <span class="plan-label"> BUSINESS </span>
+
+            <h2>Business</h2>
+
+            <p class="plan-description">
+              Built for agencies and high-volume users.
+            </p>
+          </div>
+
+          <div class="price">
+            <span class="currency"> $ </span>
+
+            <span class="amount"> 29 </span>
+
+            <span class="period"> / month </span>
+          </div>
+
+          <button class="plan-button" data-plan="business" type="button">
+            Upgrade to Business
+          </button>
+
+          <ul class="features">
+            <li>
+              <span>✓</span>
+              500 searches / month
+            </li>
+
+            <li>
+              <span>✓</span>
+              200 results / search
+            </li>
+
+            <li>
+              <span>✓</span>
+              CSV export
+            </li>
+
+            <li>
+              <span>✓</span>
+              Excel export
+            </li>
+
+            <li>
+              <span>✓</span>
+              High-volume lead generation
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- =================================================
+             STATUS
+        ================================================== -->
+
+      <div id="planStatus" class="plan-status"></div>
+    </main>
+
+    <script src="{{ url_for(
+            'static',
+            filename='pricing.js'
+        ) }}"></script>
+  </body>
+</html>

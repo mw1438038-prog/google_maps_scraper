@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Secure Checkout - Google Maps Lead Finder</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='checkout.css') }}"
+    />
+  </head>
+
+  <body>
+    <main class="checkout-page">
+      <!-- =====================================================
+           HEADER
+      ====================================================== -->
+
+      <header class="checkout-header">
+        <div class="secure-badge">
+          <span>🔒</span>
+          Secure Checkout
+        </div>
+
+        <h1>Complete Your Upgrade</h1>
+
+        <p>
+          Upgrade your Google Maps Lead Finder account and unlock more leads.
+        </p>
+      </header>
+
+      <!-- =====================================================
+           BACK TO PRICING
+      ====================================================== -->
+
+      <div class="pricing-back-wrapper">
+        <a href="{{ url_for('plans.pricing') }}" class="pricing-back-link">
+          ← Back to Pricing
+        </a>
+      </div>
+
+      <!-- =====================================================
+           CHECKOUT LAYOUT
+      ====================================================== -->
+
+      <div class="checkout-layout">
+        <!-- =================================================
+             LEFT — PLAN CARD
+        ================================================== -->
+
+        <section class="plan-column">
+          <div class="plan-card">
+            <div class="plan-top">
+              <div>
+                <span class="plan-label"> Selected Plan </span>
+
+                <h2>{{ plan_data.name }}</h2>
+              </div>
+
+              <div class="plan-icon">🚀</div>
+            </div>
+
+            <!-- PRICE -->
+
+            <div class="plan-price">
+              <span class="currency"> $ </span>
+
+              <span class="amount"> {{ plan_data.price }} </span>
+
+              <span class="period"> / month </span>
+            </div>
+
+            <div class="plan-divider"></div>
+
+            <!-- FEATURES -->
+
+            <h3>What's included</h3>
+
+            <ul class="feature-list">
+              <li>
+                <span class="check">✓</span>
+
+                <span> {{ plan_data.searches }} searches per month </span>
+              </li>
+
+              <li>
+                <span class="check">✓</span>
+
+                <span>
+                  {{ plan_data.results_per_search }} results per search
+                </span>
+              </li>
+
+              <li>
+                <span class="check">✓</span>
+
+                <span> CSV & Excel export </span>
+              </li>
+
+              <li>
+                <span class="check">✓</span>
+
+                <span> Google Maps lead generation </span>
+              </li>
+            </ul>
+
+            <!-- BILLING -->
+
+            <div class="billing-box">
+              <div>
+                <span> Billing </span>
+
+                <strong> Monthly </strong>
+              </div>
+
+              <div>
+                <span> Today </span>
+
+                <strong> ${{ plan_data.price }} </strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =================================================
+             RIGHT — PAYMENT CARD
+        ================================================== -->
+
+        <section class="payment-column">
+          <div class="payment-card">
+            <!-- PAYMENT HEADER -->
+
+            <div class="payment-header">
+              <div>
+                <span class="payment-label"> Payment Method </span>
+
+                <h2>Pay with Card</h2>
+              </div>
+
+              <div class="card-brand">CARD</div>
+            </div>
+
+            <p class="payment-description">
+              Enter your card details to securely complete your subscription.
+            </p>
+
+            <!-- =================================================
+                 CARD PREVIEW
+            ================================================== -->
+
+            <div class="card-preview">
+              <div class="card-preview-glow"></div>
+
+              <div class="card-preview-top">
+                <span class="card-brand-mark"> LEAD FINDER </span>
+
+                <span class="card-contactless"> ◔ </span>
+              </div>
+
+              <!-- CHIP -->
+
+              <div class="card-chip">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+
+              <!-- CARD NUMBER -->
+
+              <div class="card-number-preview" id="previewCardNumber">
+                •••• •••• •••• ••••
+              </div>
+
+              <!-- CARD BOTTOM -->
+
+              <div class="card-preview-bottom">
+                <div>
+                  <small> CARD HOLDER </small>
+
+                  <span id="previewName"> CARDHOLDER </span>
+                </div>
+
+                <div>
+                  <small> EXPIRES </small>
+
+                  <span id="previewExpiry"> MM/YY </span>
+                </div>
+
+                <div class="card-network">CARD</div>
+              </div>
+            </div>
+
+            <!-- =================================================
+                 PAYMENT FORM
+            ================================================== -->
+
+            <form id="paymentForm" autocomplete="off">
+              <!-- CARD NAME -->
+
+              <div class="form-group">
+                <label for="cardName"> Cardholder Name </label>
+
+                <input
+                  type="text"
+                  id="cardName"
+                  placeholder="Muhammad Waqas"
+                  autocomplete="cc-name"
+                />
+              </div>
+
+              <!-- CARD NUMBER -->
+
+              <div class="form-group">
+                <label for="cardNumber"> Card Number </label>
+
+                <div class="input-with-icon">
+                  <span class="card-icon"> 💳 </span>
+
+                  <input
+                    type="text"
+                    id="cardNumber"
+                    placeholder="1234 5678 9012 3456"
+                    maxlength="19"
+                    inputmode="numeric"
+                    autocomplete="cc-number"
+                  />
+                </div>
+              </div>
+
+              <!-- EXPIRY + CVC -->
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="expiry"> Expiry Date </label>
+
+                  <input
+                    type="text"
+                    id="expiry"
+                    placeholder="MM/YY"
+                    maxlength="5"
+                    inputmode="numeric"
+                    autocomplete="cc-exp"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="cvc"> CVC </label>
+
+                  <input
+                    type="text"
+                    id="cvc"
+                    placeholder="123"
+                    maxlength="4"
+                    inputmode="numeric"
+                    autocomplete="cc-csc"
+                  />
+                </div>
+              </div>
+
+              <!-- STATUS -->
+
+              <div id="checkoutStatus" class="checkout-status"></div>
+
+              <!-- SUCCESS MESSAGE -->
+
+              <div id="paymentSuccess" class="payment-success">
+                <div class="success-check">✓</div>
+
+                <div class="success-content">
+                  <h3>Payment Successful</h3>
+
+                  <p>Your subscription has been activated successfully.</p>
+                </div>
+              </div>
+
+              <!-- PAY BUTTON -->
+
+              <button
+                type="submit"
+                id="paymentButton"
+                class="payment-button"
+                data-plan="{{ plan }}"
+              >
+                <span> Pay ${{ plan_data.price }} </span>
+
+                <span> → </span>
+              </button>
+            </form>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='checkout.js') }}"></script>
+  </body>
+</html>
