@@ -1,3 +1,4 @@
+
 from datetime import datetime
 
 from extensions import db
@@ -53,8 +54,6 @@ class User(db.Model):
     # FREE TRIAL
     # =====================================================
 
-    # True = Free trial already used
-    # False = Free trial still available
     free_trial_used = db.Column(
         db.Boolean,
         nullable=False,
@@ -102,6 +101,10 @@ class User(db.Model):
         db.DateTime,
         nullable=True
     )
+
+    # =====================================================
+    # PAYMENT PROVIDER
+    # =====================================================
 
     payment_provider = db.Column(
         db.String(50),

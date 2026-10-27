@@ -25,7 +25,18 @@
       <div class="header-content">
         <a href="/leads" class="brand"> Lead Finder </a>
 
-        <a href="/leads" class="back-button"> ← Back to Dashboard </a>
+        <a
+          href="{{ url_for('profile.account') }}"
+          class="profile-link"
+          aria-label="Open profile dashboard"
+          title="Open profile dashboard"
+        >
+          {% if current_user.picture %}
+          <img src="{{ current_user.picture }}" alt="{{ current_user.name }}" />
+          {% else %}
+          <span>{{ current_user.get('name', 'User')[:1]|upper }}</span>
+          {% endif %}
+        </a>
       </div>
     </header>
 
@@ -44,6 +55,8 @@
           your needs.
         </p>
       </section>
+
+      <div id="planStatus" class="plan-status" aria-live="polite"></div>
 
       <!-- =================================================
              PRICING CARDS
@@ -85,11 +98,6 @@
 
             <li>
               <span>✓</span>
-              15 results / search
-            </li>
-
-            <li>
-              <span>✓</span>
               CSV export
             </li>
 
@@ -120,7 +128,7 @@
           <div class="price">
             <span class="currency"> $ </span>
 
-            <span class="amount"> 12 </span>
+            <span class="amount"> 9 </span>
 
             <span class="period"> / month </span>
           </div>
@@ -132,12 +140,7 @@
           <ul class="features">
             <li>
               <span>✓</span>
-              100 searches / month
-            </li>
-
-            <li>
-              <span>✓</span>
-              100 results / search
+              500 searches / month
             </li>
 
             <li>
@@ -175,7 +178,7 @@
           <div class="price">
             <span class="currency"> $ </span>
 
-            <span class="amount"> 29 </span>
+            <span class="amount"> 24 </span>
 
             <span class="period"> / month </span>
           </div>
@@ -187,12 +190,7 @@
           <ul class="features">
             <li>
               <span>✓</span>
-              500 searches / month
-            </li>
-
-            <li>
-              <span>✓</span>
-              200 results / search
+              1,000 searches / month
             </li>
 
             <li>
@@ -212,12 +210,6 @@
           </ul>
         </div>
       </section>
-
-      <!-- =================================================
-             STATUS
-        ================================================== -->
-
-      <div id="planStatus" class="plan-status"></div>
     </main>
 
     <script src="{{ url_for(

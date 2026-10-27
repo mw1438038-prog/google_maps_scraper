@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,500,0,0"
+      rel="stylesheet"
+    />
+
     <title>Google Maps Lead Finder</title>
 
     <style>
@@ -125,20 +132,79 @@
 
         padding: 11px 20px;
 
-        border-radius: 9px;
+        border-radius: 10px;
 
-        background: #1f6f50;
-        color: white;
+        background: #fff;
+        color: #1b2b3c;
+        border: 1px solid rgba(255, 255, 255, 0.72);
 
         font-size: 14px;
         font-weight: 600;
 
-        transition: 0.2s ease;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease,
+          background-color 0.2s ease;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        margin-left: 30px;
+      }
+
+      .nav-links a {
+        color: #234638;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      .nav-links a:hover {
+        color: #1f6f50;
+      }
+
+      .navbar > .nav-button {
+        margin-left: auto;
       }
 
       .nav-button:hover {
-        background: #15543b;
-        transform: translateY(-1px);
+        background: #f6f9ff;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+      }
+
+      .google-login-button {
+        gap: 11px;
+      }
+
+      .google-mark {
+        display: inline-flex;
+        width: 22px;
+        height: 22px;
+        flex: 0 0 22px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: conic-gradient(
+          from -45deg,
+          #4285f4 0deg 105deg,
+          #34a853 105deg 190deg,
+          #fbbc05 190deg 255deg,
+          #ea4335 255deg 315deg,
+          #4285f4 315deg
+        );
+        background-clip: text;
+        color: transparent;
+        font-family: Arial, sans-serif;
+        font-size: 21px;
+        font-weight: 800;
+        line-height: 1;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
       }
 
       /* =====================================================
@@ -293,6 +359,17 @@
         transform: translateY(-3px);
 
         box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+      }
+
+      .primary-button.google-login-button {
+        min-height: 54px;
+        border: 1px solid rgba(255, 255, 255, 0.82);
+      }
+
+      .nav-button:focus-visible,
+      .primary-button:focus-visible {
+        outline: 3px solid rgba(255, 255, 255, 0.8);
+        outline-offset: 4px;
       }
 
       .secondary-button {
@@ -645,11 +722,18 @@
       }
 
       .lead-image {
-        height: 360px;
+        height: auto;
+        min-height: 0;
+        aspect-ratio: 1 / 1;
       }
 
       .lead-image .section-image {
-        min-height: 360px;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        object-fit: contain;
+        transform: none;
+        animation: none;
       }
 
       /* =====================================================
@@ -721,6 +805,24 @@
 
         margin-bottom: 19px;
       }
+
+      .feature-icon {
+        font-size: 0;
+      }
+
+      .feature-icon::before {
+        font-family: "Material Symbols Outlined";
+        font-size: 24px;
+        font-variation-settings: "FILL" 0, "wght" 500, "GRAD" 0, "opsz" 24;
+        line-height: 1;
+      }
+
+      .feature-card:nth-child(1) .feature-icon::before { content: "public"; }
+      .feature-card:nth-child(2) .feature-icon::before { content: "search"; }
+      .feature-card:nth-child(3) .feature-icon::before { content: "business"; }
+      .feature-card:nth-child(4) .feature-icon::before { content: "table_view"; }
+      .feature-card:nth-child(5) .feature-icon::before { content: "file_download"; }
+      .feature-card:nth-child(6) .feature-icon::before { content: "account_tree"; }
 
       .feature-card h3 {
         color: #173c2d;
@@ -1017,15 +1119,56 @@
       ===================================================== */
 
       footer {
-        padding: 28px 6%;
-
-        text-align: center;
+        padding: 38px 6% 20px;
 
         background: #102d23;
 
         color: #b9ccc3;
 
         font-size: 13px;
+      }
+
+      .footer-inner {
+        max-width: 1150px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 24px;
+      }
+
+      .footer-brand {
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .footer-links {
+        grid-column: 2;
+        justify-self: end;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 24px;
+      }
+
+      .footer-links a {
+        color: #d3e2d9;
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      .footer-links a:hover {
+        color: #ffffff;
+      }
+
+      .footer-meta {
+        grid-column: 1 / -1;
+        padding-top: 17px;
+        border-top: 1px solid rgba(211, 226, 217, 0.16);
+        color: #95aea0;
+        font-size: 12px;
       }
 
       /* =====================================================
@@ -1100,6 +1243,8 @@
       @media (max-width: 650px) {
         .navbar {
           padding: 14px 5%;
+          flex-wrap: wrap;
+          gap: 8px 12px;
         }
 
         .logo {
@@ -1115,6 +1260,19 @@
           padding: 9px 13px;
 
           font-size: 12px;
+        }
+
+        .nav-links {
+          order: 3;
+          width: 100%;
+          margin: 0;
+          justify-content: flex-start;
+          gap: 20px;
+          padding: 5px 0 0;
+        }
+
+        .nav-links a {
+          font-size: 13px;
         }
 
         .hero {
@@ -1148,20 +1306,31 @@
 
         .section-image-wrap,
         .about-image,
-        .lead-image,
         .workflow-image,
         .export-image {
           min-height: 250px;
           height: 250px;
         }
 
+        .lead-image {
+          min-height: 0;
+          height: auto;
+        }
+
         .section-image,
         .about-image .section-image,
-        .lead-image .section-image,
         .workflow-image .section-image,
         .export-image .section-image {
           min-height: 250px;
           height: 250px;
+        }
+
+        .lead-image .section-image {
+          min-height: 0;
+          height: 100%;
+          object-fit: contain;
+          transform: none;
+          animation: none;
         }
 
         .content-text h3 {
@@ -1193,6 +1362,26 @@
           font-size: 29px;
         }
 
+        .footer-inner {
+          grid-template-columns: 1fr;
+          justify-items: center;
+          gap: 18px;
+          text-align: center;
+        }
+
+        .footer-links {
+          grid-column: auto;
+          justify-self: center;
+          justify-content: center;
+          flex-wrap: wrap;
+          gap: 12px 20px;
+        }
+
+        .footer-meta {
+          grid-column: auto;
+          width: 100%;
+        }
+
         .hero-buttons {
           flex-direction: column;
         }
@@ -1218,7 +1407,7 @@
       }
 
       .cta-image-wrap {
-        width: min(900px, 100%);
+        width: min(820px, 100%);
         margin: 28px auto 30px;
         border-radius: 18px;
         overflow: hidden;
@@ -1229,8 +1418,8 @@
 
       .cta-image {
         width: 100%;
-        height: 300px;
-        object-fit: cover;
+        height: auto;
+        object-fit: contain;
         object-position: center;
         display: block;
       }
@@ -1243,7 +1432,7 @@
         }
 
         .cta-image {
-          height: 210px;
+          height: auto;
         }
       }
     </style>
@@ -1268,8 +1457,18 @@
         Google Maps Lead Finder
       </a>
 
-      <a href="{{ url_for('auth.google_login') }}" class="nav-button">
-        Login with Google
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="{{ url_for('plans.pricing') }}">Pricing</a>
+        <a href="#how-it-works">How It Works</a>
+      </div>
+
+      <a
+        href="{{ url_for('auth.google_login') }}"
+        class="nav-button google-login-button"
+      >
+        <span class="google-mark" aria-hidden="true">G</span>
+        <span>Login with Google</span>
       </a>
     </nav>
 
@@ -1296,13 +1495,8 @@
           </p>
 
           <div class="hero-buttons">
-            <a href="{{ url_for('auth.google_login') }}" class="primary-button">
-              🔐 Login with Google
-            </a>
 
-            <a href="#how-it-works" class="secondary-button">
-              How It Works ↓
-            </a>
+
           </div>
         </div>
 
@@ -1409,7 +1603,7 @@
           </div>
 
           <div class="content-text">
-            <h3>🎯 Built for Lead Generation</h3>
+            <h3>Built for Lead Generation</h3>
 
             <p>
               Search for businesses using a country, city and keyword. Whether
@@ -1430,7 +1624,7 @@
       <div class="section-inner">
         <div class="image-content-grid reverse">
           <div class="content-text">
-            <h3>📊 Ready for Your Marketing Workflow</h3>
+            <h3 Ready for Your Marketing Workflow</h3>
 
             <p>
               View important business details such as business name, phone
@@ -1444,6 +1638,7 @@
             <img
               src="{{ url_for('static', filename='images/laptop-map-location.jpg') }}"
               alt="Business location research on laptop"
+              class="section-image"
             />
           </div>
         </div>
@@ -1493,7 +1688,7 @@
          FEATURES
     ====================================================== -->
 
-    <section class="section features-section">
+    <section class="section features-section" id="features">
       <div class="section-inner">
         <div class="section-heading">
           <div class="label">Features</div>
@@ -1507,7 +1702,7 @@
 
         <div class="features">
           <div class="feature-card">
-            <div class="feature-icon">🌍</div>
+            <div class="feature-icon"></div>
 
             <h3>Country & City Search</h3>
 
@@ -1518,7 +1713,7 @@
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">🔎</div>
+            <div class="feature-icon"></div>
 
             <h3>Keyword Search</h3>
 
@@ -1529,7 +1724,7 @@
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">📋</div>
+            <div class="feature-icon"></div>
 
             <h3>Business Details</h3>
 
@@ -1540,7 +1735,7 @@
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">📊</div>
+            <div class="feature-icon"></div>
 
             <h3>Excel Export</h3>
 
@@ -1551,7 +1746,7 @@
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">📥</div>
+            <div class="feature-icon"></div>
 
             <h3>CSV Export</h3>
 
@@ -1562,7 +1757,7 @@
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">⚡</div>
+            <div class="feature-icon"></div>
 
             <h3>Simple Workflow</h3>
 
@@ -1630,7 +1825,7 @@
       <div class="section-inner">
         <div class="export-content">
           <div class="export-text">
-            <h3>📥 Export Your Leads</h3>
+            <h3> Export Your Leads</h3>
 
             <p>
               Once you have reviewed your search results, export your leads and
@@ -1668,9 +1863,7 @@
           />
         </div>
 
-        <a href="{{ url_for('auth.google_login') }}" class="primary-button">
-          🔐 Login with Google
-        </a>
+       
       </div>
     </section>
 
@@ -1679,7 +1872,18 @@
     ====================================================== -->
 
     <footer>
-      © 2026 Google Maps Lead Finder. Built for smarter business research.
+      <div class="footer-inner">
+        
+        <nav class="footer-links" aria-label="Footer navigation">
+          <a href="#features">Features</a>
+          <a href="{{ url_for('plans.pricing') }}">Pricing</a>
+          <a href="#how-it-works">How It Works</a>
+          <a href="{{ url_for('auth.google_login') }}">Login with Google</a>
+        </nav>
+        <div class="footer-meta">
+          © 2026 Google Maps Lead Finder. Built for smarter business research.
+        </div>
+      </div>
     </footer>
   </body>
 </html>

@@ -1068,6 +1068,7 @@ async function exportCSV() {
 
       body: JSON.stringify({
         results: currentResults,
+        search_id: typeof getSearchId === "function" ? getSearchId() : "",
       }),
     });
 
@@ -1118,6 +1119,7 @@ async function exportExcel() {
 
       body: JSON.stringify({
         results: currentResults,
+        search_id: typeof getSearchId === "function" ? getSearchId() : "",
       }),
     });
 

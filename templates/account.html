@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Your Lead Finder account profile." />
+    <title>Account Profile - Lead Finder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,500,0,0"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='profile.css') }}"
+    />
+  </head>
+
+  <body>
+    <div class="dashboard-layout">
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="brand-logo material-symbols-outlined">location_on</div>
+          <div class="brand-text">
+            <strong>Google Maps</strong>
+            <span>Lead Finder</span>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav" aria-label="Dashboard navigation">
+          <a href="{{ url_for('profile.profile') }}" class="nav-item">
+            <span class="nav-icon material-symbols-outlined" aria-hidden="true">dashboard</span>
+            <span>Dashboard</span>
+          </a>
+          <a href="{{ url_for('leads') }}" class="nav-item">
+            <span class="nav-icon material-symbols-outlined" aria-hidden="true">search</span>
+            <span>Find Leads</span>
+          </a>
+          <a href="{{ url_for('profile.section', view='leads') }}" class="nav-item">
+            <span class="nav-icon material-symbols-outlined" aria-hidden="true">group</span>
+            <span>My Leads</span>
+          </a>
+          <a href="{{ url_for('profile.section', view='history') }}" class="nav-item">
+            <span class="nav-icon material-symbols-outlined" aria-hidden="true">history</span>
+            <span>Search History</span>
+          </a>
+          <a href="{{ url_for('profile.section', view='exports') }}" class="nav-item">
+            <span class="nav-icon material-symbols-outlined" aria-hidden="true">download</span>
+            <span>Export Center</span>
+          </a>
+          <a href="{{ url_for('profile.section', view='usage') }}" class="nav-item">
+            <span class="nav-icon material-symbols-outlined" aria-hidden="true">bar_chart</span>
+            <span>Usage &amp; Statistics</span>
+          </a>
+
+          <a href="{{ url_for('profile.section', view='help') }}" class="nav-item">
+            <span class="nav-icon material-symbols-outlined" aria-hidden="true">help</span>
+            <span>Help &amp; Support</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <a href="{{ url_for('auth.logout') }}" class="logout-link">
+            <span>↪</span>
+            <span>Logout</span>
+          </a>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="top-header">
+          <div class="mobile-brand">
+            <div class="brand-logo small">LF</div>
+            <strong>Lead Finder</strong>
+          </div>
+          <div class="header-spacer"></div>
+          <a
+            href="{{ url_for('profile.profile') }}"
+            class="header-user profile-header-link"
+            aria-label="Back to dashboard"
+            title="Back to dashboard"
+          >
+            {% if user.picture %}
+            <img
+              src="{{ user.picture }}"
+              alt="{{ user.name }}"
+              class="header-avatar"
+            />
+            {% else %}
+            <span class="header-avatar avatar-fallback"
+              >{{ user.name[:1]|upper }}</span
+            >
+            {% endif %}
+          </a>
+        </header>
+
+        <div class="page-container">
+          <section class="welcome-section">
+            <div class="welcome-content">
+              <span class="welcome-label">ACCOUNT PROFILE</span>
+              <h1>Account Information</h1>
+              <p>Your account and current subscription details.</p>
+            </div>
+          </section>
+
+          <section class="bottom-grid">
+            <div class="dashboard-card">
+              <div class="card-header">
+                <div>
+                  <span class="card-eyebrow">ACCOUNT</span>
+                  <h2>Account Information</h2>
+                </div>
+              </div>
+
+              <div class="account-profile">
+                {% if user.picture %}
+                <img
+                  src="{{ user.picture }}"
+                  alt="{{ user.name }}"
+                  class="profile-avatar"
+                />
+                {% else %}
+                <div class="profile-avatar avatar-fallback large">
+                  {{ user.name[:1]|upper }}
+                </div>
+                {% endif %}
+                <div>
+                  <h3>{{ user.name }}</h3>
+                  <p>{{ user.email }}</p>
+                  <span class="google-account">✓ Google account connected</span>
+                </div>
+              </div>
+
+              <div class="account-details">
+                <div class="detail-row">
+                  <span>Account type</span>
+                  <strong>{{ user.plan_name }}</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Member since</span>
+                  <strong>{{ user.member_since or "—" }}</strong>
+                </div>
+                {% if user.subscription_expires %}
+                <div class="detail-row">
+                  <span>Subscription renews</span>
+                  <strong>{{ user.subscription_expires }}</strong>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="dashboard-card plan-card">
+              <div class="card-header">
+                <div>
+                  <span class="card-eyebrow">SUBSCRIPTION</span>
+                  <h2>Your Plan</h2>
+                </div>
+                {% if user.plan == "pro" %}
+                <span class="popular-badge">Most Popular</span>
+                {% endif %}
+              </div>
+
+              <div class="current-plan">
+                <div>
+                  <h3>{{ user.plan_name }}</h3>
+                  {% if user.plan == "free" %}
+                  <strong>$0</strong>
+                  <span>free forever</span>
+                  {% elif user.plan == "pro" %}
+                  <strong>$9</strong>
+                  <span>/ month</span>
+                  {% else %}
+                  <strong>$24</strong>
+                  <span>/ month</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <ul class="plan-features">
+                <li>
+                  <span>✓</span>
+                  {% if user.plan == "free" %}10 lifetime searches{% elif
+                  user.plan == "pro" %}500 searches per billing cycle{% else
+                  %}1,000 searches per billing cycle{% endif %}
+                </li>
+                <li>
+                  <span></span>
+                  {% if user.plan == "free" %}15 results per search{% elif
+                  user.plan == "pro" %}Unlimited results per search{% else %}
+                  {% endif %}
+                </li>
+                <li><span>✓</span>CSV & Excel export</li>
+              </ul>
+
+              {% if user.plan == "free" %}
+              <a href="{{ url_for('plans.pricing') }}" class="plan-button"
+                >Upgrade Plan →</a
+              >
+              {% elif user.payment_provider == "stripe" %}
+              <a
+                href="{{ url_for('checkout.billing_portal') }}"
+                class="plan-button"
+                >Manage Subscription →</a
+              >
+              {% else %}
+              <a href="{{ url_for('plans.pricing') }}" class="plan-button"
+                >Manage Plan →</a
+              >
+              {% endif %}
+            </div>
+          </section>
+        </div>
+
+        <footer class="dashboard-footer">
+          <span>© 2026 TYB Work</span>
+          <span>Google Maps Lead Finder</span>
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>

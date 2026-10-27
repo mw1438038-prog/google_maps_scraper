@@ -25,8 +25,11 @@ from routes.pagination import (
 
 from routes.search_cache import (
     save_search,
+    delete_search,
     get_search,
 )
+
+from models.search_history import SearchHistory
 
 from routes.usage import (
     get_current_user,
@@ -580,9 +583,25 @@ def search():
         # one search credit.
         # =============================================
 
-        if not consume_search(
-            user
-        ):
+        search_id = save_search(
+            results=final_results,
+            country=country,
+            city=city,
+            keyword=keyword,
+        )
+
+        history_record = SearchHistory(
+            search_id=search_id,
+            user_id=user.id,
+            country=country,
+            city=city,
+            keyword=keyword,
+            result_count=len(final_results),
+            results=final_results,
+        )
+
+        if not consume_search(user, history_record):
+            delete_search(search_id)
 
             return jsonify({
 
@@ -598,22 +617,8 @@ def search():
 
         # =============================================
         # SAVE SEARCH IN CACHE
-        #
-        # Google Maps results are NOT stored in
-        # PostgreSQL.
+        # Full result data is persisted in SearchHistory.
         # =============================================
-
-        search_id = save_search(
-
-            results=final_results,
-
-            country=country,
-
-            city=city,
-
-            keyword=keyword,
-
-        )
 
         print(
             f"[SEARCH] Search ID: "

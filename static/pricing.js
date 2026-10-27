@@ -1,3 +1,6 @@
+let activePlan = "free";
+let activeSubscriptionStatus = "inactive";
+
 document.addEventListener("DOMContentLoaded", function () {
   loadCurrentPlan();
 
@@ -54,6 +57,11 @@ async function selectPlan(plan, button) {
   // =================================================
 
   if (plan === "pro" || plan === "business") {
+    if (activePlan === "business" && activeSubscriptionStatus === "active" && plan === "pro") {
+      showStatus("Downgrade to Pro will be available soon.", "loading");
+      return;
+    }
+
     window.location.href = `/checkout?plan=${encodeURIComponent(plan)}`;
 
     return;
@@ -130,6 +138,8 @@ function updatePlanUI(currentPlan, subscriptionStatus, freeTrialUsed) {
   subscriptionStatus = String(subscriptionStatus || "inactive").toLowerCase();
 
   freeTrialUsed = Boolean(freeTrialUsed);
+  activePlan = currentPlan;
+  activeSubscriptionStatus = subscriptionStatus;
 
   const cards = document.querySelectorAll(".pricing-card");
 
@@ -151,22 +161,15 @@ function updatePlanUI(currentPlan, subscriptionStatus, freeTrialUsed) {
     // =================================================
 
     if (plan === "free") {
-      // Free trial already used
-      if (freeTrialUsed) {
-        button.textContent = "Free Trial Used";
-
-        button.disabled = true;
-
+      if (currentPlan === "free") {
         card.classList.add("selected");
-
+        button.textContent = freeTrialUsed ? "Free Trial Used" : "Current Plan";
+        button.disabled = true;
         return;
       }
 
-      // Free trial not used
-      button.textContent = "Choose Free";
-
-      button.disabled = false;
-
+      button.textContent = "Free Plan";
+      button.disabled = true;
       return;
     }
 
@@ -200,6 +203,12 @@ function updatePlanUI(currentPlan, subscriptionStatus, freeTrialUsed) {
 
         button.disabled = false;
 
+        return;
+      }
+
+      if (currentPlan === "business" && subscriptionStatus === "active") {
+        button.textContent = "Downgrade to Pro";
+        button.disabled = false;
         return;
       }
 
@@ -277,5 +286,9 @@ function showStatus(message, type) {
 
   if (type) {
     status.classList.add(type);
+  }
+
+  if (type === "error") {
+    status.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 }

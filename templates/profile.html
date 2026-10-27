@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Your Google Maps Lead Finder dashboard." />
+    <title>Lead Finder Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,500,0,0"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='profile.css') }}" />
+  </head>
+  <body>
+    <div class="dashboard-layout">
+      <aside class="sidebar">
+        <a class="sidebar-brand" href="{{ url_for('profile.profile') }}">
+          <span class="brand-logo material-symbols-outlined" aria-hidden="true">location_on</span>
+          <span class="brand-text"><strong>Google Maps</strong><span>Lead Finder</span></span>
+        </a>
+
+        <nav class="sidebar-nav" aria-label="Dashboard navigation">
+          <a href="{{ url_for('profile.profile') }}" class="nav-item{% if view|default('dashboard') == 'dashboard' %} active{% endif %}"><span class="nav-icon material-symbols-outlined" aria-hidden="true">dashboard</span><span>Dashboard</span></a>
+          <a href="{{ url_for('leads') }}" class="nav-item"><span class="nav-icon material-symbols-outlined" aria-hidden="true">search</span><span>Search Leads</span></a>
+          <a href="{{ url_for('profile.section', view='leads') }}" class="nav-item{% if view|default('') == 'leads' %} active{% endif %}"><span class="nav-icon material-symbols-outlined" aria-hidden="true">groups</span><span>My Leads</span></a>
+          <a href="{{ url_for('profile.section', view='history') }}" class="nav-item{% if view|default('') == 'history' %} active{% endif %}"><span class="nav-icon material-symbols-outlined" aria-hidden="true">history</span><span>Search History</span></a>
+          <a href="{{ url_for('profile.section', view='exports') }}" class="nav-item{% if view|default('') == 'exports' %} active{% endif %}"><span class="nav-icon material-symbols-outlined" aria-hidden="true">download</span><span>Export Center</span></a>
+          <a href="{{ url_for('profile.section', view='usage') }}" class="nav-item{% if view|default('') == 'usage' %} active{% endif %}"><span class="nav-icon material-symbols-outlined" aria-hidden="true">bar_chart</span><span>Usage &amp; Statistics</span></a>
+          <a href="{{ url_for('profile.account') }}" class="nav-item"><span class="nav-icon material-symbols-outlined" aria-hidden="true">person</span><span>My Profile</span></a>
+          <a href="{{ url_for('profile.section', view='settings') }}" class="nav-item{% if view|default('') == 'settings' %} active{% endif %}"><span class="nav-icon material-symbols-outlined" aria-hidden="true">settings</span><span>Settings</span></a>
+          <a href="{{ url_for('profile.section', view='help') }}" class="nav-item{% if view|default('') == 'help' %} active{% endif %}"><span class="nav-icon material-symbols-outlined" aria-hidden="true">help</span><span>Help &amp; Support</span></a>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="sidebar-promo">
+            <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>
+            <strong>Find more leads</strong>
+            <p>Search local businesses by place and keyword.</p>
+          </div>
+          <a href="{{ url_for('auth.logout') }}" class="logout-link"><span class="material-symbols-outlined" aria-hidden="true">logout</span><span>Logout</span></a>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="top-header">
+          <div class="mobile-brand"><span class="brand-logo small material-symbols-outlined" aria-hidden="true">location_on</span><strong>Lead Finder</strong></div>
+          <div class="header-spacer"></div>
+          <span class="header-notice material-symbols-outlined" aria-hidden="true">notifications</span>
+          <a href="{{ url_for('profile.account') }}" class="header-user profile-header-link" aria-label="Open account profile" title="Open account profile">
+            {% if user.picture %}<img src="{{ user.picture }}" alt="{{ user.name }}" class="header-avatar" />{% else %}<span class="header-avatar avatar-fallback">{{ user.name[:1]|upper }}</span>{% endif %}
+            <span class="header-user-info"><strong>{{ user.name }}</strong><span>{{ user.plan_name }} Plan</span></span>
+            <span class="material-symbols-outlined header-chevron" aria-hidden="true">expand_more</span>
+          </a>
+        </header>
+
+        <div class="page-container">
+          <section class="dashboard-heading">
+            <div>
+              <span class="page-eyebrow">LEAD FINDER</span>
+              {% if view|default('dashboard') == 'dashboard' %}
+                <h1>Welcome back, {{ user.name }}!</h1><p>Here is what is happening with your account today.</p>
+              {% elif view == 'leads' %}
+                <h1>My Leads</h1><p>Businesses collected from your recent searches.</p>
+              {% elif view == 'history' %}
+                <h1>Search History</h1><p>Review previous searches and their results.</p>
+              {% elif view == 'exports' %}
+                <h1>Export Center</h1><p>Download leads from your saved searches.</p>
+              {% elif view == 'usage' %}
+                <h1>Usage &amp; Statistics</h1><p>Track searches, leads, exports, and plan usage.</p>
+              {% elif view == 'settings' %}
+                <h1>Settings</h1><p>Manage your profile details and account preferences.</p>
+              {% else %}
+                <h1>Help &amp; Support</h1><p>Guides for searching, managing, and exporting leads.</p>
+              {% endif %}
+            </div>
+            {% if view|default('dashboard') in ['dashboard', 'leads'] %}
+              <a href="{{ url_for('leads') }}" class="primary-button"><span class="material-symbols-outlined" aria-hidden="true">search</span><span>Search Leads</span></a>
+            {% endif %}
+          </section>
+
+          {% if view|default('dashboard') == 'dashboard' %}
+            <section class="metric-grid" aria-label="Account summary">
+              <article class="metric-card metric-green"><span class="metric-icon material-symbols-outlined" aria-hidden="true">search</span><div><p>Total Searches</p><strong>{{ dashboard.total_searches }}</strong><small>All time</small></div></article>
+              <article class="metric-card metric-blue"><span class="metric-icon material-symbols-outlined" aria-hidden="true">groups</span><div><p>Total Leads Found</p><strong>{{ dashboard.total_leads }}</strong><small>Saved from searches</small></div></article>
+              <article class="metric-card metric-amber"><span class="metric-icon material-symbols-outlined" aria-hidden="true">download</span><div><p>Total Exported</p><strong>{{ dashboard.exported_leads }}</strong><small>Leads exported</small></div></article>
+              <article class="metric-card metric-violet"><span class="metric-icon material-symbols-outlined" aria-hidden="true">schedule</span><div><p>Searches Remaining</p><strong>{{ user.searches_remaining }}</strong><small>Out of {{ user.searches_limit }} this cycle</small></div></article>
+            </section>
+
+            <section class="dashboard-main-grid">
+              <article class="panel search-promo">
+                <div class="search-promo-copy"><span class="panel-icon material-symbols-outlined" aria-hidden="true">travel_explore</span><div><h2>Find Local Businesses on Google Maps</h2><p>Search by country, city, and keyword to find local businesses with contact details, ratings, and more.</p></div></div>
+                <div class="search-preview-controls" aria-hidden="true"><span><i class="material-symbols-outlined">public</i>Select Country</span><span><i class="material-symbols-outlined">location_on</i>Select City</span><span><i class="material-symbols-outlined">search</i>Business Keyword</span><a href="{{ url_for('leads') }}">Search</a></div>
+                <p class="popular-searches">Popular: restaurants, hotels, hospitals, real estate</p>
+              </article>
+              <article class="panel current-plan-panel">
+                <div class="plan-panel-top"><span>Current Plan</span><span class="plan-pill">{{ user.plan_name }}</span></div>
+                <h2>{{ user.plan_name }} Plan</h2>
+                <p>{% if user.plan == 'free' %}Explore the lead finder and upgrade when you need more searches.{% else %}Your paid plan is {{ user.subscription_status }}.{% endif %}</p>
+                <a href="{{ url_for('plans.pricing') }}" class="plan-cta">Plans &amp; Billing</a>
+                <div class="plan-stat"><span>Searches used</span><strong>{{ user.searches_used }} / {{ user.searches_limit }}</strong></div>
+                <div class="plan-stat"><span>Searches remaining</span><strong>{{ user.searches_remaining }}</strong></div>
+                {% if user.subscription_expires %}<div class="plan-stat"><span>Renews / expires</span><strong>{{ user.subscription_expires }}</strong></div>{% endif %}
+              </article>
+            </section>
+
+            <section class="dashboard-lower-grid">
+              <article class="panel recent-panel">
+                <div class="panel-heading"><div><span class="panel-kicker">RECENT LEADS</span><h2>Your latest discoveries</h2></div><a href="{{ url_for('profile.section', view='leads') }}" class="text-link">View all</a></div>
+                {% if dashboard.recent_leads %}
+                  <div class="table-scroll"><table class="data-table"><thead><tr><th>Business</th><th>Location</th><th>Rating</th><th>Added</th></tr></thead><tbody>
+                    {% for lead in dashboard.recent_leads %}<tr><td><strong>{{ lead.name }}</strong><small>{{ lead.query }}</small></td><td>{{ lead.address or 'Location not provided' }}</td><td>{% if lead.rating %}<span class="rating">★ {{ lead.rating }}</span>{% else %}—{% endif %}</td><td>{{ lead.added }}</td></tr>{% endfor %}
+                  </tbody></table></div>
+                {% else %}
+                  <div class="empty-state"><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No leads yet</strong><p>Run your first search to see discovered businesses here.</p><a href="{{ url_for('leads') }}" class="text-link">Start a search →</a></div>
+                {% endif %}
+              </article>
+
+              <article class="panel usage-panel">
+                <div class="panel-heading"><div><span class="panel-kicker">YOUR USAGE</span><h2>Search activity</h2></div><a href="{{ url_for('profile.section', view='usage') }}" class="text-link">View details</a></div>
+                <div class="usage-summary-block"><div class="usage-ring" style="--usage: {{ user.usage_percentage }}%"><div><strong>{{ user.usage_percentage_display }}%</strong><span>Used</span></div></div><div class="usage-numbers"><p><span>Searches</span><strong>{{ user.searches_used }} / {{ user.searches_limit }}</strong></p><p><span>Leads exported</span><strong>{{ dashboard.exported_leads }}</strong></p><p><span>Plan limit</span><strong>{{ user.searches_limit }} per cycle</strong></p></div></div>
+                <div class="activity-heading"><strong>Searches this week</strong><span>{{ dashboard.max_week_count }} max/day</span></div>
+                <div class="activity-chart" role="img" aria-label="Searches this week by day">{% for day in dashboard.weekly_activity %}<div class="activity-day"><div class="activity-bar-track"><span class="activity-bar" data-height="{{ day.height }}" title="{{ day.count }} searches"></span></div><small>{{ day.label }}</small></div>{% endfor %}</div>
+              </article>
+
+              <article class="panel quick-panel">
+                <div class="panel-heading"><div><span class="panel-kicker">QUICK ACTIONS</span><h2>Keep moving</h2></div></div>
+                <a class="quick-action" href="{{ url_for('leads') }}"><span class="quick-action-icon material-symbols-outlined" aria-hidden="true">search</span><span><strong>Search Leads</strong><small>Find new businesses</small></span><span class="material-symbols-outlined quick-arrow" aria-hidden="true">arrow_forward</span></a>
+                <a class="quick-action" href="{{ url_for('profile.section', view='leads') }}"><span class="quick-action-icon material-symbols-outlined" aria-hidden="true">groups</span><span><strong>My Leads</strong><small>View saved discoveries</small></span><span class="material-symbols-outlined quick-arrow" aria-hidden="true">arrow_forward</span></a>
+                <a class="quick-action" href="{{ url_for('profile.section', view='exports') }}"><span class="quick-action-icon material-symbols-outlined" aria-hidden="true">download</span><span><strong>Export Data</strong><small>Download CSV/Excel</small></span><span class="material-symbols-outlined quick-arrow" aria-hidden="true">arrow_forward</span></a>
+                <a class="quick-action" href="{{ url_for('plans.pricing') }}"><span class="quick-action-icon material-symbols-outlined" aria-hidden="true">credit_card</span><span><strong>Plans &amp; Billing</strong><small>Review your plan</small></span><span class="material-symbols-outlined quick-arrow" aria-hidden="true">arrow_forward</span></a>
+              </article>
+            </section>
+
+          {% elif view == 'leads' %}
+            <section class="panel full-panel"><div class="panel-heading"><div><span class="panel-kicker">SAVED DISCOVERIES</span><h2>My Leads</h2></div><span class="count-pill">{{ dashboard.all_leads|length }} recent leads</span></div>
+              {% if dashboard.all_leads %}<div class="table-scroll"><table class="data-table"><thead><tr><th>Business</th><th>Search</th><th>Location</th><th>Rating</th><th>Map</th></tr></thead><tbody>{% for lead in dashboard.all_leads %}<tr><td><strong>{{ lead.name }}</strong></td><td>{{ lead.query }}</td><td>{{ lead.address or '—' }}</td><td>{% if lead.rating %}<span class="rating">★ {{ lead.rating }}</span>{% else %}—{% endif %}</td><td>{% if lead.maps_url %}<a class="table-link" href="{{ lead.maps_url }}" target="_blank" rel="noopener">Open map</a>{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+              {% else %}<div class="empty-state"><span class="material-symbols-outlined" aria-hidden="true">groups</span><strong>No leads saved yet</strong><p>Search results will appear here after your first successful search.</p><a href="{{ url_for('leads') }}" class="primary-button">Search Leads</a></div>{% endif %}
+            </section>
+
+          {% elif view == 'history' %}
+            <section class="panel full-panel"><div class="panel-heading"><div><span class="panel-kicker">SEARCHES</span><h2>Search History</h2></div><span class="count-pill">{{ dashboard.history|length }} recent searches</span></div>
+              {% if dashboard.history %}<div class="table-scroll"><table class="data-table"><thead><tr><th>Keyword</th><th>Location</th><th>Results</th><th>Exports</th><th>Date</th></tr></thead><tbody>{% for item in dashboard.history %}<tr><td><strong>{{ item.keyword }}</strong></td><td>{{ item.city }}, {{ item.country }}</td><td>{{ item.result_count }}</td><td>{{ item.export_count }}</td><td>{{ item.created_at }}</td></tr>{% endfor %}</tbody></table></div>
+              {% else %}<div class="empty-state"><span class="material-symbols-outlined" aria-hidden="true">history</span><strong>No search history yet</strong><p>Successful searches will be listed here.</p></div>{% endif %}
+            </section>
+
+          {% elif view == 'exports' %}
+            <section class="panel full-panel"><div class="panel-heading"><div><span class="panel-kicker">DOWNLOADS</span><h2>Export Center</h2></div><span class="count-pill">{{ dashboard.exports|length }} saved searches</span></div>
+              {% if dashboard.exports %}<div class="table-scroll"><table class="data-table"><thead><tr><th>Search</th><th>Location</th><th>Leads</th><th>Last exported</th><th>Download</th></tr></thead><tbody>{% for item in dashboard.exports %}<tr><td><strong>{{ item.keyword }}</strong></td><td>{{ item.city }}, {{ item.country }}</td><td>{{ item.result_count }}</td><td>{{ item.last_exported_at or 'Not exported yet' }}</td><td class="export-actions"><a class="small-download" href="{{ url_for('export.export_search_history', search_id=item.search_id, file_type='csv') }}">CSV</a><a class="small-download" href="{{ url_for('export.export_search_history', search_id=item.search_id, file_type='xlsx') }}">Excel</a></td></tr>{% endfor %}</tbody></table></div>
+              {% else %}<div class="empty-state"><span class="material-symbols-outlined" aria-hidden="true">download</span><strong>No saved searches yet</strong><p>Searches you run will be available to download here.</p><a href="{{ url_for('leads') }}" class="text-link">Find leads →</a></div>{% endif %}
+            </section>
+
+          {% elif view == 'usage' %}
+            <section class="usage-detail-grid"><article class="panel"><span class="panel-kicker">CURRENT CYCLE</span><h2>Search usage</h2><div class="usage-summary-block"><div class="usage-ring large-ring" style="--usage: {{ user.usage_percentage }}%"><div><strong>{{ user.usage_percentage_display }}%</strong><span>Used</span></div></div><div class="usage-numbers"><p><span>Searches used</span><strong>{{ user.searches_used }}</strong></p><p><span>Searches remaining</span><strong>{{ user.searches_remaining }}</strong></p><p><span>Plan allowance</span><strong>{{ user.searches_limit }}</strong></p></div></div></article>
+              <article class="panel"><span class="panel-kicker">LAST 7 DAYS</span><h2>Search activity</h2><div class="activity-chart large-chart">{% for day in dashboard.weekly_activity %}<div class="activity-day"><div class="activity-bar-track"><span class="activity-bar" data-height="{{ day.height }}" title="{{ day.count }} searches"></span></div><small>{{ day.label }}</small><small class="activity-count">{{ day.count }}</small></div>{% endfor %}</div></article></section>
+
+          {% elif view == 'settings' %}
+            <section class="settings-grid"><article class="panel settings-card"><div class="panel-heading"><div><span class="panel-kicker">PROFILE</span><h2>Personal details</h2></div></div>
+              {% if settings_message %}<div class="form-message success-message" role="status">{{ settings_message }}</div>{% endif %}{% if settings_error %}<div class="form-message error-message" role="alert">{{ settings_error }}</div>{% endif %}
+              <form method="post" class="settings-form"><label for="displayName">Display name</label><input id="displayName" name="name" type="text" maxlength="80" value="{{ user.name }}" required /><label for="accountEmail">Email address</label><input id="accountEmail" type="email" value="{{ user.email }}" disabled /><p class="form-hint">Your email is managed by your connected Google account.</p><button class="primary-button" type="submit"><span class="material-symbols-outlined" aria-hidden="true">save</span>Save settings</button></form>
+            </article><article class="panel"><span class="panel-kicker">ACCOUNT</span><h2>Plan and security</h2><div class="settings-list"><div><span>Current plan</span><strong>{{ user.plan_name }}</strong></div><div><span>Subscription status</span><strong>{{ user.subscription_status|title }}</strong></div><div><span>Member since</span><strong>{{ user.member_since or '—' }}</strong></div></div><a href="{{ url_for('plans.pricing') }}" class="text-link">Manage plan &amp; billing →</a></article></section>
+
+          {% else %}
+            <section class="help-grid"><article class="panel help-intro"><span class="panel-icon material-symbols-outlined" aria-hidden="true">support_agent</span><span class="panel-kicker">HELP CENTER</span><h2>How can we help?</h2><p>Use these quick guides to search, review, and export your local business leads.</p><a href="{{ url_for('leads') }}" class="primary-button"><span class="material-symbols-outlined" aria-hidden="true">search</span>Start a search</a></article>
+              <article class="panel help-questions"><span class="panel-kicker">QUICK ANSWERS</span><h2>Frequently asked questions</h2><details><summary>How do I find businesses?</summary><p>Open Find Leads, choose a country and city, enter a business keyword, then run the search.</p></details><details><summary>Where are my saved results?</summary><p>Successful searches appear in My Leads and Search History.</p></details><details><summary>How do I download leads?</summary><p>Open Export Center and choose CSV or Excel beside a saved search.</p></details><details><summary>Where can I see my search allowance?</summary><p>Usage &amp; Statistics shows searches used, searches remaining, and weekly activity.</p></details><details><summary>How do I change my plan?</summary><p>Open Plans &amp; Billing to view available plans and manage an upgrade.</p></details></article></section>
+          {% endif %}
+        </div>
+
+        <footer class="dashboard-footer"><span>© 2026 Google Maps Lead Finder</span><a href="{{ url_for('profile.section', view='help') }}">Help &amp; Support</a></footer>
+      </main>
+   </div>
+    <script src="{{ url_for('static', filename='profile.js') }}"></script>
+  </body>
+</html>

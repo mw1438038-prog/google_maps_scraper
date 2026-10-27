@@ -1546,6 +1546,29 @@ body.home-page::after {
   transition: all 0.2s ease;
 }
 
+.header-profile-photo {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+}
+
+.header-profile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .plan-button-link {
   background: rgba(255, 255, 255, 0.14);
   color: white;
@@ -1577,34 +1600,6 @@ body.home-page::after {
   align-items: center;
   gap: 18px;
   flex-shrink: 0;
-}
-
-.change-plan-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 8px 13px;
-
-  border-radius: 8px;
-
-  background: rgba(38, 112, 82, 0.1);
-
-  color: #267052;
-
-  text-decoration: none;
-
-  font-size: 12px;
-  font-weight: 700;
-
-  white-space: nowrap;
-
-  transition: all 0.2s ease;
-}
-
-.change-plan-button:hover {
-  background: rgba(38, 112, 82, 0.18);
-  transform: translateY(-1px);
 }
 
 /* =====================================================
@@ -1643,10 +1638,5 @@ body.home-page::after {
   .plan-badge-right {
     flex-direction: column;
     align-items: flex-end;
-  }
-
-  .change-plan-button {
-    font-size: 11px;
-    padding: 7px 10px;
   }
 }

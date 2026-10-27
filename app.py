@@ -9,10 +9,12 @@ from flask import (
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config
-
 from extensions import db
 
 
+# =====================================================
+# BLUEPRINTS
+# =====================================================
 
 from routes.locations import locations_bp
 from routes.search import search_bp
@@ -27,10 +29,14 @@ from routes.auth import (
     init_oauth,
 )
 
+# PROFILE
+from routes.profile import profile_bp
+
 
 def create_app():
 
     app = Flask(__name__)
+
 
     # =====================================================
     # CONFIG
@@ -105,6 +111,12 @@ def create_app():
         payment_bp
     )
 
+    # PROFILE
+    app.register_blueprint(
+        profile_bp
+    )
+
+
     # =====================================================
     # HOME
     # =====================================================
@@ -148,6 +160,10 @@ def create_app():
             "pricing.html"
         )
 
+
+    # =====================================================
+    # RETURN APP
+    # =====================================================
 
     return app
 

@@ -1,7 +1,7 @@
+
 import os
 
 from dotenv import load_dotenv
-
 
 load_dotenv()
 
@@ -42,6 +42,11 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 1800,
+    }
+
     # =====================================================
     # FLASK SESSION
     # =====================================================
@@ -52,10 +57,11 @@ class Config:
     )
 
     SESSION_COOKIE_HTTPONLY = True
-
     SESSION_COOKIE_SAMESITE = "Lax"
 
-    # HTTPS on Vercel
     SESSION_COOKIE_SECURE = (
         os.getenv("VERCEL") == "1"
     )
+
+    SESSION_PERMANENT = True
+    SESSION_COOKIE_PATH = "/"

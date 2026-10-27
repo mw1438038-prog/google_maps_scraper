@@ -35,13 +35,19 @@
             ================================================== -->
 
           <div class="header-actions">
-            <a href="/pricing" class="header-action-button plan-button-link">
-              💎 Change Plan
-            </a>
-
-            <a href="/auth/logout" class="header-action-button logout-button">
-              🚪 Logout
-            </a>
+            <div class="header-profile-photo">
+              {% if session.get('user', {}).get('picture') %}
+              <img
+                src="{{ session.get('user', {}).get('picture') }}"
+                alt="{{ session.get('user', {}).get('name', 'Profile') }}"
+              />
+              {% else %}
+              <span
+                >{{ session.get('user', {}).get('name', 'User')[:1]|upper
+                }}</span
+              >
+              {% endif %}
+            </div>
           </div>
         </div>
       </header>
@@ -77,12 +83,6 @@
 
             <span class="usage-label"> Searches Left </span>
           </div>
-
-          <!-- =================================================
-                 CHANGE PLAN
-            ================================================== -->
-
-          <a href="/pricing" class="change-plan-button"> Change Plan </a>
         </div>
       </div>
 

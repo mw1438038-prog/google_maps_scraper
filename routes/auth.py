@@ -6,6 +6,7 @@ from flask import (
 )
 
 from authlib.integrations.flask_client import OAuth
+from authlib.integrations.base_client.errors import MismatchingStateError
 
 from extensions import db
 from models.user import User
@@ -54,13 +55,16 @@ def init_oauth(app):
 @auth_bp.route("/google")
 def google_login():
 
+    # Start a fresh OAuth flow.
+    session.permanent = True
+
     redirect_uri = url_for(
         "auth.google_callback",
         _external=True
     )
 
     return oauth.google.authorize_redirect(
-        redirect_uri
+        redirect_uri=redirect_uri
     )
 
 
@@ -72,10 +76,30 @@ def google_login():
 def google_callback():
 
     # -------------------------------------------------
-    # GET GOOGLE TOKEN
+    # VERIFY GOOGLE OAUTH STATE
     # -------------------------------------------------
 
-    token = oauth.google.authorize_access_token()
+    try:
+
+        token = oauth.google.authorize_access_token()
+
+    except MismatchingStateError:
+
+        # -------------------------------------------------
+        # IMPORTANT:
+        # Do NOT disable Authlib state validation.
+        #
+        # This can happen when the browser comes back to
+        # an old OAuth callback from browser history.
+        #
+        # Start a completely fresh OAuth flow instead.
+        # -------------------------------------------------
+
+        session.clear()
+
+        return redirect(
+            url_for("auth.google_login")
+        )
 
     # -------------------------------------------------
     # GET USER INFO
@@ -85,6 +109,17 @@ def google_callback():
 
     if not user_info:
         user_info = oauth.google.userinfo()
+
+    if not user_info:
+
+        return (
+            "Unable to get Google account information.",
+            400
+        )
+
+    # -------------------------------------------------
+    # GOOGLE USER DATA
+    # -------------------------------------------------
 
     google_id = user_info.get("sub")
     name = user_info.get("name")
@@ -103,7 +138,7 @@ def google_callback():
         )
 
     # =================================================
-    # FIND USER IN DATABASE
+    # FIND USER
     # =================================================
 
     user = User.query.filter_by(
@@ -111,7 +146,7 @@ def google_callback():
     ).first()
 
     # =================================================
-    # CREATE NEW USER
+    # CREATE USER
     # =================================================
 
     if not user:
@@ -137,14 +172,18 @@ def google_callback():
         user.picture = picture
 
     # =================================================
-    # SAVE DATABASE CHANGES
+    # SAVE DATABASE
     # =================================================
 
     db.session.commit()
 
     # =================================================
-    # FLASK SESSION
+    # CREATE APPLICATION SESSION
     # =================================================
+
+    session.clear()
+
+    session.permanent = True
 
     session["user"] = {
         "id": user.id,
@@ -155,14 +194,12 @@ def google_callback():
         "plan": user.plan,
     }
 
-    session.permanent = True
-
     # =================================================
-    # DASHBOARD
+    # REDIRECT TO PROFILE
     # =================================================
 
     return redirect(
-        url_for("leads")
+        url_for("profile.profile")
     )
 
 
