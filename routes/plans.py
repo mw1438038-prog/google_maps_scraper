@@ -11,10 +11,7 @@ from extensions import db
 from models.user import User
 
 
-plans_bp = Blueprint(
-    "plans",
-    __name__,
-)
+plans_bp = Blueprint("plans", __name__)
 
 
 # =====================================================
@@ -25,23 +22,18 @@ PLAN_DETAILS = {
     "free": {
         "name": "Free Plan",
         "searches": 10,
-        "results_per_search": 15,
         "price": 0,
         "billing": "free",
     },
-
     "pro": {
         "name": "Pro",
         "searches": 500,
-        "results_per_search": 100,
         "price": 9,
         "billing": "monthly",
     },
-
     "business": {
         "name": "Business",
         "searches": 1000,
-        "results_per_search": 200,
         "price": 24,
         "billing": "monthly",
     },
@@ -53,7 +45,6 @@ PLAN_DETAILS = {
 # =====================================================
 
 def get_current_user():
-
     user_data = session.get("user")
 
     if not user_data:
@@ -64,22 +55,15 @@ def get_current_user():
     if not user_id:
         return None
 
-    return db.session.get(
-        User,
-        user_id
-    )
+    return db.session.get(User, user_id)
 
 
 # =====================================================
 # PRICING PAGE
 # =====================================================
 
-@plans_bp.route(
-    "/pricing",
-    methods=["GET"]
-)
+@plans_bp.route("/pricing", methods=["GET"])
 def pricing():
-
     return render_template(
         "pricing.html",
         current_user=session.get("user") or {},
@@ -90,12 +74,8 @@ def pricing():
 # GET PLANS
 # =====================================================
 
-@plans_bp.route(
-    "/api/plans",
-    methods=["GET"]
-)
+@plans_bp.route("/api/plans", methods=["GET"])
 def get_plans():
-
     user = get_current_user()
 
     current_plan = "free"
@@ -104,7 +84,6 @@ def get_plans():
     subscription_expires_at = None
 
     if user:
-
         current_plan = (
             user.plan or "free"
         ).strip().lower()
@@ -116,9 +95,7 @@ def get_plans():
             user.subscription_status or "inactive"
         ).strip().lower()
 
-        free_trial_used = bool(
-            user.free_trial_used
-        )
+        free_trial_used = bool(user.free_trial_used)
 
         if user.subscription_expires_at:
             subscription_expires_at = (
@@ -139,12 +116,8 @@ def get_plans():
 # SELECT PLAN
 # =====================================================
 
-@plans_bp.route(
-    "/api/plans/select",
-    methods=["POST"]
-)
+@plans_bp.route("/api/plans/select", methods=["POST"])
 def select_plan():
-
     user = get_current_user()
 
     if not user:
@@ -199,10 +172,10 @@ def select_plan():
             "plan": "free",
             "plan_name": PLAN_DETAILS["free"]["name"],
             "searches": PLAN_DETAILS["free"]["searches"],
-            "results_per_search": PLAN_DETAILS["free"]["results_per_search"],
             "searches_used": user.searches_used,
             "searches_remaining": max(
-                PLAN_DETAILS["free"]["searches"] - user.searches_used,
+                PLAN_DETAILS["free"]["searches"]
+                - (user.searches_used or 0),
                 0,
             ),
         })

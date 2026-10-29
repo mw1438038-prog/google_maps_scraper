@@ -32,6 +32,40 @@ class Config:
     )
 
     # =====================================================
+    # FREEMIUS PAYMENTS
+    # =====================================================
+
+    FREEMIUS_PRODUCT_ID = os.getenv(
+        "FREEMIUS_PRODUCT_ID",
+        ""
+    )
+
+    FREEMIUS_PRO_PLAN_ID = os.getenv(
+        "FREEMIUS_PRO_PLAN_ID",
+        ""
+    )
+
+    FREEMIUS_BUSINESS_PLAN_ID = os.getenv(
+        "FREEMIUS_BUSINESS_PLAN_ID",
+        ""
+    )
+
+    FREEMIUS_API_BEARER_TOKEN = os.getenv(
+        "FREEMIUS_API_BEARER_TOKEN",
+        ""
+    )
+
+    FREEMIUS_PRODUCT_SECRET_KEY = os.getenv(
+        "FREEMIUS_PRODUCT_SECRET_KEY",
+        ""
+    )
+
+    FREEMIUS_WEBHOOK_ID = os.getenv(
+        "FREEMIUS_WEBHOOK_ID",
+        ""
+    )
+
+    # =====================================================
     # DATABASE
     # =====================================================
 
@@ -44,8 +78,12 @@ class Config:
 
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
-        "pool_recycle": 1800,
-    }
+        "pool_recycle": 300,
+        "pool_timeout": 30,
+        "connect_args": {
+        "connect_timeout": 10,
+    },
+}
 
     # =====================================================
     # FLASK SESSION

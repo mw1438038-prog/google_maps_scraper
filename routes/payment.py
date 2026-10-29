@@ -116,6 +116,10 @@ def _get_event_license_id(event):
     if license_data.get("id"):
         return str(license_data["id"])
 
+    subscription = objects.get("subscription") or {}
+    if subscription.get("license_id"):
+        return str(subscription["license_id"])
+
     data = event.get("data") or {}
 
     if data.get("license_id"):
@@ -224,7 +228,10 @@ def _sync_license(license_id):
     )
 
     is_canceled = bool(
-        license_data.get("is_canceled", False)
+        license_data.get(
+            "is_cancelled",
+            license_data.get("is_canceled", False),
+        )
     )
 
     now = _utc_now()
@@ -250,6 +257,8 @@ def _sync_license(license_id):
         user.subscription_status = (
             "canceled" if is_canceled else "expired"
         )
+        user.plan = "free"
+        user.searches_limit = 10
         user.subscription_expires_at = expires_at
         user.payment_provider = "freemius"
         user.payment_reference = str(actual_license_id)
@@ -347,6 +356,8 @@ def freemius_webhook():
             "license.cancelled",
             "license.expired",
             "license.plan.changed",
+            "subscription.cancelled",
+            "subscription.renewal.failed.last",
         }
 
         if event_type == "license.deleted":

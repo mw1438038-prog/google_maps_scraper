@@ -167,6 +167,7 @@
                   {% if user.plan == "free" %}
                   <strong>$0</strong>
                   <span>free forever</span>
+                  <p>One-time free plan — available only once per user.</p>
                   {% elif user.plan == "pro" %}
                   <strong>$9</strong>
                   <span>/ month</span>
@@ -197,7 +198,7 @@
               <a href="{{ url_for('plans.pricing') }}" class="plan-button"
                 >Upgrade Plan →</a
               >
-              {% elif user.payment_provider == "stripe" %}
+              {% elif user.payment_provider == "freemius" %}
               <a
                 href="{{ url_for('checkout.billing_portal') }}"
                 class="plan-button"

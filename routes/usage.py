@@ -45,9 +45,22 @@ def get_current_user():
     user_id = user_data.get("id")
 
     if not user_id:
+        session.clear()
         return None
 
-    return db.session.get(User, user_id)
+    try:
+        user = db.session.get(User, user_id)
+
+        if user is None:
+            session.clear()
+            return None
+
+        return user
+
+    except Exception:
+        db.session.rollback()
+        session.clear()
+        return None
 
 
 # =====================================================
@@ -86,18 +99,21 @@ def check_subscription_expiry(user):
     expires_at = user.subscription_expires_at
 
     if not expires_at:
-        # Paid plans must have a verified expiry date.
         return True
 
     now = datetime.utcnow()
 
-    # Handle timezone-aware database datetimes safely.
     if expires_at.tzinfo is not None:
         now = datetime.now(expires_at.tzinfo)
 
     if now >= expires_at:
-        if user.subscription_status != "expired":
+        if (
+            user.subscription_status != "expired"
+            or (user.plan or "free").lower() != "free"
+        ):
             user.subscription_status = "expired"
+            user.plan = "free"
+            user.searches_limit = PLAN_LIMITS["free"]["searches"]
             db.session.commit()
 
         return True
@@ -107,10 +123,6 @@ def check_subscription_expiry(user):
 
 # =====================================================
 # USAGE RESET
-#
-# A paid period is reset only when the subscription
-# remains active and its usage period has elapsed.
-# Production renewal should be confirmed by Freemius.
 # =====================================================
 
 def reset_usage_if_needed(user):
@@ -135,15 +147,11 @@ def reset_usage_if_needed(user):
         now = datetime.now(reset_at.tzinfo)
 
     if not reset_at:
-        # Do not reset an existing usage counter merely
-        # because this is the first check.
         user.searches_reset_at = now
         db.session.commit()
         return
 
     if now >= reset_at + timedelta(days=30):
-        # This local timer is a fallback only. For exact
-        # billing-cycle alignment, reset on verified renewal.
         user.searches_used = 0
         user.searches_reset_at = now
         db.session.commit()

@@ -1,5 +1,8 @@
 
 from urllib.parse import urlencode
+from urllib.parse import urlparse
+
+import requests
 
 from flask import (
     Blueprint,
@@ -23,19 +26,19 @@ PLAN_DETAILS = {
         "name": "Free Plan",
         "price": 0,
         "searches": 10,
-        "results_per_search": 15,
+        
     },
     "pro": {
         "name": "Pro Plan",
         "price": 9,
         "searches": 500,
-        "results_per_search": 100,
+        
     },
     "business": {
         "name": "Business Plan",
         "price": 24,
         "searches": 1000,
-        "results_per_search": 200,
+        
     },
 }
 
@@ -149,5 +152,50 @@ def billing_portal():
     if not user:
         return redirect(url_for("auth.google_login"))
 
-    # Customer portal integration can be added separately.
-    return redirect(url_for("profile.profile"))
+    if user.payment_provider != "freemius":
+        return redirect(url_for("plans.pricing"))
+
+    product_id = str(
+        current_app.config.get("FREEMIUS_PRODUCT_ID") or ""
+    ).strip()
+    token = str(
+        current_app.config.get("FREEMIUS_API_BEARER_TOKEN") or ""
+    ).strip()
+
+    if not product_id or not token:
+        current_app.logger.error(
+            "Freemius customer portal is missing API configuration."
+        )
+        return redirect(url_for("profile.profile"))
+
+    try:
+        response = requests.post(
+            f"https://api.freemius.com/v1/products/{product_id}/portal/login.json",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json",
+            },
+            json={"email": user.email},
+            timeout=15,
+        )
+        response.raise_for_status()
+        portal_link = response.json().get("link")
+
+        if not isinstance(portal_link, str):
+            raise ValueError("Freemius did not return a portal link.")
+
+        parsed_link = urlparse(portal_link)
+        if (
+            parsed_link.scheme != "https"
+            or not parsed_link.hostname
+            or not parsed_link.hostname.endswith(".freemius.com")
+        ):
+            raise ValueError("Freemius returned an invalid portal link.")
+
+        return redirect(portal_link)
+
+    except (requests.RequestException, ValueError, AttributeError):
+        current_app.logger.exception(
+            "Could not create a Freemius customer portal link."
+        )
+        return redirect(url_for("profile.profile"))

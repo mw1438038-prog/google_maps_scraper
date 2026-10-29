@@ -1,220 +1,849 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Choose Your Plan - Lead Finder</title>
 
-    <title>Choose Your Plan - Lead Finder</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-    <link
-      rel="stylesheet"
-      href="{{ url_for(
-            'static',
-            filename='pricing.css'
-        ) }}"
-    />
-  </head>
+:root {
+    --blue: #075477;
+    --blue-dark: #064d70;
+    --light-blue: #d5eaf2;
+    --green: #16bd55;
+    --text: #164d6a;
+}
 
-  <body>
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
+html,
+body {
+    width: 100%;
+    min-height: 100%;
+}
 
-    <header class="pricing-header">
-      <div class="header-content">
-        <a href="/leads" class="brand"> Lead Finder </a>
+body {
+    min-height: 100vh;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #d4e8f0;
+    color: var(--text);
+}
 
-        <a
-          href="{{ url_for('profile.account') }}"
-          class="profile-link"
-          aria-label="Open profile dashboard"
-          title="Open profile dashboard"
-        >
-          {% if current_user.picture %}
-          <img src="{{ current_user.picture }}" alt="{{ current_user.name }}" />
-          {% else %}
-          <span>{{ current_user.get('name', 'User')[:1]|upper }}</span>
-          {% endif %}
+/* FULL SCREEN FRAME */
+
+.page-frame {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 15px;
+    background: var(--blue-dark);
+    position: relative;
+    overflow: hidden;
+}
+
+.page-frame::before {
+    content: "";
+    position: absolute;
+    width: 230px;
+    height: 230px;
+    right: -100px;
+    top: -100px;
+    border-radius: 50%;
+    background: #0a6287;
+    pointer-events: none;
+}
+
+.page-frame::after {
+    content: "";
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    left: -125px;
+    bottom: 80px;
+    border-radius: 50%;
+    background: #0a6287;
+    pointer-events: none;
+}
+
+.content {
+    background: #fff;
+    width: 100%;
+    min-height: calc(100vh - 24px);
+    position: relative;
+    z-index: 1;
+    padding: 30px 6% 24px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+}
+
+/* NAVBAR */
+
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 38px;
+    position: relative;
+    z-index: 3;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 21px;
+    font-weight: 800;
+    color: var(--blue);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.logo-icon {
+    background: var(--blue);
+    color: white;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 22px;
+}
+
+.nav-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.nav-link {
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 17px;
+    border-radius: 7px;
+    color: var(--blue);
+    transition: 0.2s;
+}
+
+.nav-link:hover {
+    background: #edf6fa;
+}
+
+.dashboard-link {
+    background: var(--blue);
+    color: white;
+}
+
+.dashboard-link:hover {
+    background: #063f5b;
+    color: white;
+}
+
+/* HEADING */
+
+.hero {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.hero h1 {
+    font-size: clamp(32px, 3.5vw, 48px);
+    color: var(--blue);
+    font-weight: 750;
+    margin-bottom: 18px;
+}
+
+.billing {
+    display: inline-flex;
+    border: 1px solid #8bb8ce;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 17px;
+}
+
+.billing span {
+    display: inline-block;
+    padding: 11px 35px;
+    min-width: 150px;
+    font-size: 13px;
+}
+
+.billing .active {
+    background: #eaf4f9;
+    color: var(--blue);
+    font-weight: 800;
+}
+
+.hero p {
+    font-size: 17px;
+    color: #7ca9bf;
+}
+
+.hero p strong {
+    color: var(--blue);
+}
+
+/* PLAN CARDS */
+
+.plans {
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 32px;
+}
+
+.plan-card {
+    border: 1px solid #8db5cc;
+    border-radius: 10px;
+    padding: 35px 32px 28px;
+    background: white;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 8px 25px rgba(6, 77, 112, 0.05);
+}
+
+.plan-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 32px rgba(6, 77, 112, 0.12);
+}
+
+.plan-card.featured {
+    background: var(--blue-dark);
+    color: white;
+    border: 2px solid var(--blue-dark);
+    margin-top: -20px;
+    margin-bottom: -2px;
+    padding-top: 40px;
+    box-shadow: 0 15px 35px rgba(6, 77, 112, 0.18);
+}
+
+.plan-name {
+    text-align: center;
+    margin-bottom: 17px;
+}
+
+.plan-name span {
+    display: inline-block;
+    border: 1px solid #80aec7;
+    border-radius: 7px;
+    padding: 8px 25px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--blue);
+}
+
+.featured .plan-name span {
+    color: white;
+    border-color: #b4d1e0;
+}
+
+.price {
+    text-align: center;
+    font-size: clamp(42px, 4vw, 54px);
+    line-height: 1.2;
+    font-weight: 800;
+    color: var(--blue);
+    margin-top: 4px;
+}
+
+.featured .price {
+    color: white;
+}
+
+.period {
+    text-align: center;
+    font-size: 13px;
+    margin-top: 8px;
+    margin-bottom: 22px;
+    color: #80a8bc;
+}
+
+.featured .period {
+    color: #d3e8f1;
+}
+
+/* SEARCH QUANTITY */
+
+.search-limit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 10px;
+    margin: 0 0 27px;
+    border-radius: 9px;
+    background: #eaf4f9;
+    color: #075477;
+    font-size: 15px;
+    text-align: center;
+}
+
+.search-limit .search-icon {
+    font-size: 21px;
+}
+
+.search-limit strong {
+    font-weight: 800;
+}
+
+.featured .search-limit {
+    background: white;
+    color: var(--blue);
+}
+
+/* FEATURES */
+
+.feature-heading {
+    font-size: 15px;
+    font-weight: 800;
+    margin-bottom: 22px;
+}
+
+.features {
+    list-style: none;
+    flex: 1;
+    margin: 0 0 28px;
+}
+
+.features li {
+    display: flex;
+    gap: 11px;
+    align-items: flex-start;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    color: #315d76;
+}
+
+.featured .features li {
+    color: #f2f8fb;
+}
+
+.check {
+    flex-shrink: 0;
+    width: 17px;
+    height: 17px;
+    border: 1px solid var(--green);
+    color: var(--green);
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 800;
+    margin-top: 2px;
+}
+
+.unavailable {
+    opacity: 0.55;
+    text-decoration: line-through;
+}
+
+.unavailable .check {
+    border-color: #8aa8b8;
+    color: #8aa8b8;
+}
+
+/* BUTTONS */
+
+.plan-button {
+    display: block;
+    width: 100%;
+    min-height: 49px;
+    border: none;
+    border-radius: 7px;
+    background: var(--light-blue);
+    color: var(--blue);
+    text-align: center;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.plan-button:hover {
+    filter: brightness(0.95);
+}
+
+.plan-button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.featured .plan-button {
+    background: white;
+    color: var(--blue);
+}
+
+/* COMPARISON */
+
+.comparison {
+    max-width: 1500px;
+    width: 100%;
+    margin: 35px auto 0;
+}
+
+.comparison-toggle {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-bottom: 1px solid #d8e8ef;
+    background: #f2f8fb;
+    color: var(--blue);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.comparison-toggle span {
+    margin-left: 7px;
+}
+
+.comparison-table {
+    display: none;
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+.comparison-table.show {
+    display: table;
+}
+
+.comparison-table th,
+.comparison-table td {
+    border: 1px solid #dfebf1;
+    padding: 14px;
+    text-align: center;
+}
+
+.comparison-table th {
+    background: #eff7fb;
+    color: var(--blue);
+}
+
+.comparison-table td:first-child,
+.comparison-table th:first-child {
+    text-align: left;
+}
+
+.yes {
+    color: #16a34a;
+    font-weight: 800;
+}
+
+.no {
+    color: #9aa7b5;
+}
+
+/* FOOTER */
+
+.footer {
+    text-align: center;
+    margin-top: auto;
+    padding-top: 32px;
+    color: #82a7ba;
+    font-size: 12px;
+}
+
+/* RESPONSIVE */
+
+@media (min-width: 1600px) {
+    .content {
+        padding-left: 8%;
+        padding-right: 8%;
+    }
+
+    .plans {
+        gap: 40px;
+    }
+
+    .plan-card {
+        padding: 42px 38px 32px;
+    }
+
+    .plan-card.featured {
+        padding-top: 45px;
+    }
+
+    .features li {
+        font-size: 15px;
+        margin-bottom: 17px;
+    }
+}
+
+@media (max-width: 900px) {
+    .content {
+        padding: 25px 4%;
+    }
+
+    .plans {
+        gap: 17px;
+    }
+
+    .plan-card {
+        padding: 27px 20px 23px;
+    }
+
+    .plan-card.featured {
+        padding-top: 32px;
+    }
+
+    .features li {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 700px) {
+    .page-frame {
+        padding: 6px;
+    }
+
+    .content {
+        min-height: calc(100vh - 12px);
+        padding: 20px 5%;
+    }
+
+    .navbar {
+        align-items: center;
+        margin-bottom: 35px;
+    }
+
+    .logo {
+        font-size: 15px;
+        gap: 7px;
+    }
+
+    .logo-icon {
+        width: 31px;
+        height: 31px;
+        font-size: 18px;
+    }
+
+    .nav-actions {
+        gap: 3px;
+    }
+
+    .nav-link {
+        font-size: 11px;
+        padding: 9px;
+    }
+
+    .hero {
+        margin-bottom: 35px;
+    }
+
+    .hero p {
+        font-size: 14px;
+    }
+
+    .billing span {
+        min-width: 125px;
+        padding: 10px 17px;
+    }
+
+    .plans {
+        max-width: 520px;
+        grid-template-columns: 1fr;
+        gap: 27px;
+    }
+
+    .plan-card,
+    .plan-card.featured {
+        margin: 0;
+        padding: 30px 25px;
+    }
+
+    .features li {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    .comparison {
+        max-width: 520px;
+    }
+
+    .comparison-table {
+        font-size: 11px;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+        padding: 8px 5px;
+    }
+}
+
+@media (max-width: 380px) {
+    .logo span:last-child {
+        font-size: 12px;
+    }
+
+    .nav-link {
+        padding: 7px;
+        font-size: 10px;
+    }
+
+    .plan-card,
+    .plan-card.featured {
+        padding: 25px 18px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="page-frame">
+<div class="content">
+
+    <header class="navbar">
+        <a href="/" class="logo">
+            <span class="logo-icon">⌕</span>
+            <span>LEAD FINDER</span>
         </a>
-      </div>
+
+        <nav class="nav-actions">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/profile/" class="nav-link dashboard-link">
+                ← Back to Dashboard
+            </a>
+        </nav>
     </header>
 
-    <!-- =====================================================
-         MAIN
-    ====================================================== -->
+    <section class="hero">
+        <h1>Choose Your Plan</h1>
 
-    <main class="pricing-page">
-      <section class="pricing-intro">
-        <span class="eyebrow"> SIMPLE PRICING </span>
-
-        <h1>Choose the Right Plan</h1>
-
-        <p>
-          Find more businesses and generate more leads with the plan that fits
-          your needs.
-        </p>
-      </section>
-
-      <div id="planStatus" class="plan-status" aria-live="polite"></div>
-
-      <!-- =================================================
-             PRICING CARDS
-        ================================================== -->
-
-      <section class="pricing-grid">
-        <!-- =================================================
-                 FREE
-            ================================================== -->
-
-        <div class="pricing-card free-card" data-plan="free">
-          <div class="card-top">
-            <span class="plan-label"> FREE </span>
-
-            <h2>Free</h2>
-
-            <p class="plan-description">
-              Get started with basic lead generation.
-            </p>
-          </div>
-
-          <div class="price">
-            <span class="currency"> $ </span>
-
-            <span class="amount"> 0 </span>
-
-            <span class="period"> / month </span>
-          </div>
-
-          <button class="plan-button" data-plan="free" type="button">
-            Choose Free
-          </button>
-
-          <ul class="features">
-            <li>
-              <span>✓</span>
-              10 searches / month
-            </li>
-
-            <li>
-              <span>✓</span>
-              CSV export
-            </li>
-
-            <li>
-              <span>✓</span>
-              Excel export
-            </li>
-          </ul>
+        <div class="billing">
+            <span class="active">Monthly Plans</span>
         </div>
 
-        <!-- =================================================
-                 PRO
-            ================================================== -->
+        <p>Best Plans For <strong>Lead Generation</strong></p>
+    </section>
 
-        <div class="pricing-card pro-card featured" data-plan="pro">
-          <div class="popular-badge">MOST POPULAR</div>
+    <main class="plans">
 
-          <div class="card-top">
-            <span class="plan-label"> PRO </span>
+        <!-- FREE PLAN -->
+        <article class="plan-card">
+            <h2 class="plan-name"><span>Free</span></h2>
 
-            <h2>Pro</h2>
+            <div class="price">$0</div>
+            <div class="period">Forever Free</div>
 
-            <p class="plan-description">
-              For marketers and growing businesses.
-            </p>
-          </div>
+            <div class="search-limit">
+                <span class="search-icon">⌕</span>
+                <strong>10 Searches</strong>
+            </div>
 
-          <div class="price">
-            <span class="currency"> $ </span>
+            <h3 class="feature-heading">Included Features</h3>
 
-            <span class="amount"> 9 </span>
+            <ul class="features">
+                <li><span class="check">✓</span><span>Business Search</span></li>
+                <li><span class="check">✓</span><span>Business Details</span></li>
+                <li class="unavailable"><span class="check">×</span><span>Advanced Lead Search</span></li>
+                <li class="unavailable"><span class="check">×</span><span>CSV / Excel Export</span></li>
+                <li class="unavailable"><span class="check">×</span><span>Priority Support</span></li>
+            </ul>
 
-            <span class="period"> / month </span>
-          </div>
+            <button class="plan-button" onclick="selectPlan('free', this)">
+                Choose Plan
+            </button>
+        </article>
 
-          <button class="plan-button primary" data-plan="pro" type="button">
-            Upgrade to Pro
-          </button>
+        <!-- PRO PLAN -->
+        <article class="plan-card featured">
+            <h2 class="plan-name"><span>Pro</span></h2>
 
-          <ul class="features">
-            <li>
-              <span>✓</span>
-              500 searches / month
-            </li>
+            <div class="price">$9</div>
+            <div class="period">Per Month</div>
 
-            <li>
-              <span>✓</span>
-              CSV export
-            </li>
+            <div class="search-limit">
+                <span class="search-icon">⌕</span>
+                <strong>500 Searches / Month</strong>
+            </div>
 
-            <li>
-              <span>✓</span>
-              Excel export
-            </li>
+            <h3 class="feature-heading">Pro Features</h3>
 
-            <li>
-              <span>✓</span>
-              Priority lead generation
-            </li>
-          </ul>
-        </div>
+            <ul class="features">
+                <li><span class="check">✓</span><span>Business Search</span></li>
+                <li><span class="check">✓</span><span>Business Details</span></li>
+                <li><span class="check">✓</span><span>Advanced Lead Search</span></li>
+                <li><span class="check">✓</span><span>CSV / Excel Export</span></li>
+                <li><span class="check">✓</span><span>Email Support</span></li>
+            </ul>
 
-        <!-- =================================================
-                 BUSINESS
-            ================================================== -->
+            <button class="plan-button" onclick="selectPlan('pro', this)">
+                Choose Pro
+            </button>
+        </article>
 
-        <div class="pricing-card business-card" data-plan="business">
-          <div class="card-top">
-            <span class="plan-label"> BUSINESS </span>
+        <!-- BUSINESS PLAN -->
+        <article class="plan-card">
+            <h2 class="plan-name"><span>Business</span></h2>
 
-            <h2>Business</h2>
+            <div class="price">$24</div>
+            <div class="period">Per Month</div>
 
-            <p class="plan-description">
-              Built for agencies and high-volume users.
-            </p>
-          </div>
+            <div class="search-limit">
+                <span class="search-icon">⌕</span>
+                <strong>1,000 Searches / Month</strong>
+            </div>
 
-          <div class="price">
-            <span class="currency"> $ </span>
+            <h3 class="feature-heading">Business Features</h3>
 
-            <span class="amount"> 24 </span>
+            <ul class="features">
+                <li><span class="check">✓</span><span>Business Search</span></li>
+                <li><span class="check">✓</span><span>Business Details</span></li>
+                <li><span class="check">✓</span><span>Advanced Lead Search</span></li>
+                <li><span class="check">✓</span><span>CSV / Excel Export</span></li>
+                <li><span class="check">✓</span><span>Priority Support</span></li>
+            </ul>
 
-            <span class="period"> / month </span>
-          </div>
+            <button class="plan-button" onclick="selectPlan('business', this)">
+                Choose Business
+            </button>
+        </article>
 
-          <button class="plan-button" data-plan="business" type="button">
-            Upgrade to Business
-          </button>
-
-          <ul class="features">
-            <li>
-              <span>✓</span>
-              1,000 searches / month
-            </li>
-
-            <li>
-              <span>✓</span>
-              CSV export
-            </li>
-
-            <li>
-              <span>✓</span>
-              Excel export
-            </li>
-
-            <li>
-              <span>✓</span>
-              High-volume lead generation
-            </li>
-          </ul>
-        </div>
-      </section>
     </main>
 
-    <script src="{{ url_for(
-            'static',
-            filename='pricing.js'
-        ) }}"></script>
-  </body>
+    <section class="comparison">
+        <button class="comparison-toggle" onclick="toggleComparison()">
+            <span id="comparisonLabel">Show Detailed Plan Comparison</span>
+            <span id="arrow">▼</span>
+        </button>
+
+        <table class="comparison-table" id="comparisonTable">
+            <thead>
+                <tr>
+                    <th>Features</th>
+                    <th>Free</th>
+                    <th>Pro</th>
+                    <th>Business</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td>Monthly Searches</td>
+                    <td>10</td>
+                    <td>500</td>
+                    <td>1,000</td>
+                </tr>
+                <tr>
+                    <td>Business Search</td>
+                    <td class="yes">✓</td>
+                    <td class="yes">✓</td>
+                    <td class="yes">✓</td>
+                </tr>
+                <tr>
+                    <td>Business Details</td>
+                    <td class="yes">✓</td>
+                    <td class="yes">✓</td>
+                    <td class="yes">✓</td>
+                </tr>
+                <tr>
+                    <td>Advanced Lead Search</td>
+                    <td class="no">×</td>
+                    <td class="yes">✓</td>
+                    <td class="yes">✓</td>
+                </tr>
+                <tr>
+                    <td>CSV / Excel Export</td>
+                    <td class="no">×</td>
+                    <td class="yes">✓</td>
+                    <td class="yes">✓</td>
+                </tr>
+                <tr>
+                    <td>Support</td>
+                    <td>Basic</td>
+                    <td>Email</td>
+                    <td>Priority</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <footer class="footer">
+        Lead Finder · Simple monthly pricing for your business
+    </footer>
+
+</div>
+</div>
+
+<script>
+function toggleComparison() {
+    const table = document.getElementById("comparisonTable");
+    const arrow = document.getElementById("arrow");
+    const label = document.getElementById("comparisonLabel");
+
+    const isOpen = table.classList.toggle("show");
+
+    arrow.textContent = isOpen ? "▲" : "▼";
+    label.textContent = isOpen
+        ? "Hide Detailed Plan Comparison"
+        : "Show Detailed Plan Comparison";
+}
+
+async function selectPlan(plan, button) {
+    const originalText = button.textContent;
+
+    button.disabled = true;
+    button.textContent = "Please wait...";
+
+    try {
+        const response = await fetch("/api/plans/select", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "same-origin",
+            body: JSON.stringify({ plan: plan })
+        });
+
+        const data = await response.json();
+
+        if (response.status === 401) {
+            alert("Please login before selecting a plan.");
+            window.location.href = "/login";
+            return;
+        }
+
+        if (data.redirect) {
+            window.location.href = data.redirect;
+            return;
+        }
+
+        if (!response.ok || !data.success) {
+            alert(data.message || "Unable to select this plan.");
+            return;
+        }
+
+        alert(data.message || "Plan selected successfully.");
+        window.location.href = "/profile/";
+
+    } catch (error) {
+        console.error("Plan selection error:", error);
+        alert("Something went wrong. Please try again.");
+
+    } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+    }
+}
+</script>
+
+</body>
 </html>
