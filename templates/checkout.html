@@ -29,7 +29,7 @@
           Secure Checkout
         </div>
 
-        <h1>Complete Your Upgrade</h1>
+        <h1>{% if is_plan_change %}Change Your Plan{% else %}Complete Your Upgrade{% endif %}</h1>
         <p>Continue to Freemius to complete your subscription securely.</p>
       </header>
 
@@ -87,7 +87,7 @@
             <div class="accepted-cards-card">
               <h2>Secure Payment</h2>
               <p>
-                Your subscription checkout will be handled by Freemius.
+              Your {% if is_plan_change %}plan change{% else %}subscription checkout{% endif %} will be handled by Freemius.
                 Available payment methods are shown during checkout.
               </p>
             </div>
@@ -103,8 +103,9 @@
             <p class="subscription-note">
               Your selected plan is {{ plan_data.name }} at
               ${{ plan_data.price }} USD per month.
-              Subscription activation and usage limits will be updated
+              {% if is_plan_change %}Your current subscription will be changed after Freemius confirms payment. {% else %}Subscription activation and usage limits will be updated
               after your payment is verified.
+              {% endif %}
             </p>
 
             <form id="paymentForm">

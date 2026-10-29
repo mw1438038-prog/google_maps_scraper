@@ -57,11 +57,6 @@ async function selectPlan(plan, button) {
   // =================================================
 
   if (plan === "pro" || plan === "business") {
-    if (activePlan === "business" && activeSubscriptionStatus === "active" && plan === "pro") {
-      showStatus("Downgrade to Pro will be available soon.", "loading");
-      return;
-    }
-
     window.location.href = `/checkout?plan=${encodeURIComponent(plan)}`;
 
     return;
