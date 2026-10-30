@@ -9,6 +9,7 @@ from flask import (
 
 from extensions import db
 from models.user import User
+from services.plan_limits import PLAN_LIMITS
 
 
 plans_bp = Blueprint("plans", __name__)
@@ -21,19 +22,19 @@ plans_bp = Blueprint("plans", __name__)
 PLAN_DETAILS = {
     "free": {
         "name": "Free Plan",
-        "searches": 10,
+        "searches": PLAN_LIMITS["free"]["searches"],
         "price": 0,
         "billing": "free",
     },
     "pro": {
         "name": "Pro",
-        "searches": 500,
+        "searches": PLAN_LIMITS["pro"]["searches"],
         "price": 9,
         "billing": "monthly",
     },
     "business": {
         "name": "Business",
-        "searches": 1000,
+        "searches": PLAN_LIMITS["business"]["searches"],
         "price": 24,
         "billing": "monthly",
     },
@@ -104,6 +105,7 @@ def get_plans():
 
     return jsonify({
         "success": True,
+        "authenticated": user is not None,
         "plans": PLAN_DETAILS,
         "current_plan": current_plan,
         "subscription_status": subscription_status,

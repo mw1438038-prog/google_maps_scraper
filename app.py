@@ -17,6 +17,7 @@ from extensions import db
 # Register models before database initialization
 from models.user import User
 from models.exported_lead import ExportedLead
+from models.freemius_webhook_event import FreemiusWebhookEvent
 
 # Blueprints
 from routes.locations import locations_bp

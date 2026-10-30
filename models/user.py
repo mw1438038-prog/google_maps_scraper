@@ -76,6 +76,12 @@ class User(db.Model):
         default=10
     )
 
+    searches_rollover_remaining = db.Column(
+        db.Integer,
+        nullable=False,
+        default=0,
+    )
+
     searches_reset_at = db.Column(
         db.DateTime,
         nullable=False,

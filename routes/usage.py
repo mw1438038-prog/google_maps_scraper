@@ -1,35 +1,15 @@
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from flask import Blueprint, jsonify, session
+from sqlalchemy import case, update
 
 from extensions import db
 from models.user import User
+from services.plan_limits import PLAN_LIMITS
 
 
 usage_bp = Blueprint("usage", __name__)
-
-
-# =====================================================
-# PLAN LIMITS
-# =====================================================
-
-PLAN_LIMITS = {
-    "free": {
-        "searches": 10,
-        "results_per_search": 15,
-    },
-    "pro": {
-        "searches": 500,
-        "results_per_search": 100,
-        "duration_days": 30,
-    },
-    "business": {
-        "searches": 1000,
-        "results_per_search": 200,
-        "duration_days": 30,
-    },
-}
 
 
 # =====================================================
@@ -114,47 +94,14 @@ def check_subscription_expiry(user):
             user.subscription_status = "expired"
             user.plan = "free"
             user.searches_limit = PLAN_LIMITS["free"]["searches"]
+            user.searches_used = PLAN_LIMITS["free"]["searches"]
+            user.searches_rollover_remaining = 0
+            user.free_trial_used = True
             db.session.commit()
 
         return True
 
     return False
-
-
-# =====================================================
-# USAGE RESET
-# =====================================================
-
-def reset_usage_if_needed(user):
-    if not user:
-        return
-
-    plan = get_user_plan(user)
-
-    if plan == "free":
-        return
-
-    if check_subscription_expiry(user):
-        return
-
-    if (user.subscription_status or "").lower() != "active":
-        return
-
-    now = datetime.utcnow()
-    reset_at = user.searches_reset_at
-
-    if reset_at and reset_at.tzinfo is not None:
-        now = datetime.now(reset_at.tzinfo)
-
-    if not reset_at:
-        user.searches_reset_at = now
-        db.session.commit()
-        return
-
-    if now >= reset_at + timedelta(days=30):
-        user.searches_used = 0
-        user.searches_reset_at = now
-        db.session.commit()
 
 
 # =====================================================
@@ -164,11 +111,6 @@ def reset_usage_if_needed(user):
 def can_search(user):
     if not user:
         return False
-
-    if check_subscription_expiry(user):
-        return False
-
-    reset_usage_if_needed(user)
 
     if check_subscription_expiry(user):
         return False
@@ -190,7 +132,12 @@ def can_search(user):
     if (user.subscription_status or "").lower() != "active":
         return False
 
-    if user.searches_used >= limits["searches"]:
+    quota_limit = max(
+        int(user.searches_limit or 0),
+        limits["searches"],
+    )
+
+    if user.searches_used >= quota_limit:
         return False
 
     return True
@@ -216,16 +163,23 @@ def get_usage(user):
 
     subscription_expired = check_subscription_expiry(user)
 
-    if not subscription_expired:
-        reset_usage_if_needed(user)
-        subscription_expired = check_subscription_expiry(user)
-
     plan = get_user_plan(user)
     limits = get_plan_limits(user)
 
     used = user.searches_used or 0
-    limit = limits["searches"]
-    remaining = max(limit - used, 0)
+    free_trial_used = bool(user.free_trial_used)
+
+    if plan == "free":
+        limit = limits["searches"]
+        remaining = (
+            0 if free_trial_used else max(limit - used, 0)
+        )
+    else:
+        limit = max(
+            int(user.searches_limit or 0),
+            limits["searches"],
+        )
+        remaining = max(limit - used, 0)
 
     if plan != "free" and (
         subscription_expired
@@ -241,7 +195,7 @@ def get_usage(user):
         "limit": limit,
         "remaining": remaining,
         "results_per_search": limits["results_per_search"],
-        "free_trial_used": bool(user.free_trial_used),
+        "free_trial_used": free_trial_used,
         "subscription_status": user.subscription_status or "inactive",
         "subscription_expires_at": (
             expires_at.isoformat() if expires_at else None
@@ -258,24 +212,74 @@ def consume_search(user, history_record=None):
     if not user:
         return False
 
-    if not can_search(user):
-        return False
-
     plan = get_user_plan(user)
     limits = get_plan_limits(user)
 
-    if user.searches_used >= limits["searches"]:
+    if not can_search(user):
         return False
 
-    user.searches_used += 1
+    quota_limit = (
+        limits["searches"]
+        if plan == "free"
+        else max(
+            int(user.searches_limit or 0),
+            limits["searches"],
+        )
+    )
+    conditions = [
+        User.id == user.id,
+        User.searches_used < quota_limit,
+    ]
 
-    if plan == "free" and user.searches_used >= limits["searches"]:
-        user.free_trial_used = True
+    if plan == "free":
+        conditions.extend([
+            User.plan == "free",
+            User.free_trial_used.is_(False),
+        ])
+    else:
+        conditions.extend([
+            User.plan == plan,
+            User.subscription_status == "active",
+            User.subscription_expires_at > datetime.utcnow(),
+            User.searches_used < User.searches_limit,
+        ])
+
+    statement = update(User).where(*conditions).values(
+        searches_used=User.searches_used + 1,
+    )
+    if plan == "free":
+        statement = statement.values(
+            free_trial_used=case(
+                (
+                    User.searches_used + 1 >= limits["searches"],
+                    True,
+                ),
+                else_=User.free_trial_used,
+            ),
+        )
+    else:
+        statement = statement.values(
+            searches_rollover_remaining=case(
+                (
+                    User.searches_rollover_remaining > 0,
+                    User.searches_rollover_remaining - 1,
+                ),
+                else_=User.searches_rollover_remaining,
+            ),
+        )
+
+    result = db.session.execute(
+        statement.execution_options(synchronize_session=False)
+    )
+    if result.rowcount != 1:
+        db.session.rollback()
+        return False
 
     if history_record is not None:
         db.session.add(history_record)
 
     db.session.commit()
+    db.session.refresh(user)
     return True
 
 

@@ -15,11 +15,11 @@
 }
 
 :root {
-    --blue: #075477;
-    --blue-dark: #064d70;
-    --light-blue: #d5eaf2;
+    --blue: #08775e;
+    --blue-dark: #075741;
+    --light-blue: #e8f6ef;
     --green: #16bd55;
-    --text: #164d6a;
+    --text: #08775e;
 }
 
 html,
@@ -42,7 +42,7 @@ body {
     min-height: 100vh;
     margin: 0;
     padding: 15px;
-    background: var(--blue-dark);
+    background: #075741;
     position: relative;
     overflow: hidden;
 }
@@ -55,7 +55,7 @@ body {
     right: -100px;
     top: -100px;
     border-radius: 50%;
-    background: #0a6287;
+    background: #08775e;
     pointer-events: none;
 }
 
@@ -67,7 +67,7 @@ body {
     left: -125px;
     bottom: 80px;
     border-radius: 50%;
-    background: #0a6287;
+    background: #08775e;
     pointer-events: none;
 }
 
@@ -137,13 +137,17 @@ body {
     background: #edf6fa;
 }
 
+.nav-link[href="/"] {
+    color: #075477;
+}
+
 .dashboard-link {
-    background: var(--blue);
+    background: #08775e;
     color: white;
 }
 
 .dashboard-link:hover {
-    background: #063f5b;
+    background: #075741;
     color: white;
 }
 
@@ -163,7 +167,7 @@ body {
 
 .billing {
     display: inline-flex;
-    border: 1px solid #8bb8ce;
+    border: 1px solid #08775e;
     border-radius: 5px;
     overflow: hidden;
     margin-bottom: 17px;
@@ -184,7 +188,7 @@ body {
 
 .hero p {
     font-size: 17px;
-    color: #7ca9bf;
+    color: #5f9b87;
 }
 
 .hero p strong {
@@ -204,7 +208,7 @@ body {
 }
 
 .plan-card {
-    border: 1px solid #8db5cc;
+    border: 1px solid #08775e;
     border-radius: 10px;
     padding: 35px 32px 28px;
     background: white;
@@ -228,6 +232,42 @@ body {
     margin-bottom: -2px;
     padding-top: 40px;
     box-shadow: 0 15px 35px rgba(6, 77, 112, 0.18);
+}
+
+/* Keep the Pro card blue; use the profile green on the other plan cards. */
+.plan-card:not(.featured) {
+    border-color: #08775e;
+    color: #08775e;
+}
+
+.plan-card:not(.featured) .plan-name span {
+    border-color: #08775e;
+    color: #08775e;
+}
+
+.plan-card:not(.featured) .price,
+.plan-card:not(.featured) .feature-heading,
+.plan-card:not(.featured) .features li:not(.unavailable) {
+    color: #08775e;
+}
+
+.plan-card:not(.featured) .period {
+    color: #5f9b87;
+}
+
+.plan-card:not(.featured) .search-limit {
+    background: #e8f6ef;
+    color: #08775e;
+}
+
+.plan-card:not(.featured) .check {
+    border-color: #08775e;
+    color: #08775e;
+}
+
+.plan-card:not(.featured) .plan-button {
+    background: #e8f6ef;
+    color: #08775e;
 }
 
 .plan-name {
@@ -379,7 +419,7 @@ body {
 
 .plan-button:disabled {
     opacity: 0.6;
-    cursor: wait;
+    cursor: not-allowed;
 }
 
 .featured .plan-button {
@@ -658,13 +698,13 @@ body {
                 <li class="unavailable"><span class="check">×</span><span>Priority Support</span></li>
             </ul>
 
-            <button class="plan-button" onclick="selectPlan('free', this)">
+            <button class="plan-button" data-plan="free" disabled onclick="selectPlan('free', this)">
                 Choose Plan
             </button>
         </article>
 
         <!-- PRO PLAN -->
-        <article class="plan-card featured">
+        <article class="plan-card">
             <h2 class="plan-name"><span>Pro</span></h2>
 
             <div class="price">$9</div>
@@ -685,7 +725,7 @@ body {
                 <li><span class="check">✓</span><span>Email Support</span></li>
             </ul>
 
-            <button class="plan-button" onclick="selectPlan('pro', this)">
+            <button class="plan-button" data-plan="pro" disabled onclick="selectPlan('pro', this)">
                 Choose Pro
             </button>
         </article>
@@ -712,7 +752,7 @@ body {
                 <li><span class="check">✓</span><span>Priority Support</span></li>
             </ul>
 
-            <button class="plan-button" onclick="selectPlan('business', this)">
+            <button class="plan-button" data-plan="business" disabled onclick="selectPlan('business', this)">
                 Choose Business
             </button>
         </article>
@@ -784,6 +824,54 @@ body {
 </div>
 
 <script>
+document.addEventListener("DOMContentLoaded", loadCurrentPlanButtons);
+
+async function loadCurrentPlanButtons() {
+    try {
+        const response = await fetch("/api/plans", {
+            credentials: "same-origin"
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data.success) return;
+
+        if (!data.authenticated) {
+            document.querySelectorAll(".plan-button[data-plan]").forEach((button) => {
+                button.textContent = "Log in to choose";
+                button.disabled = true;
+            });
+            return;
+        }
+
+        const currentPlan = String(data.current_plan || "free").toLowerCase();
+        const active = String(data.subscription_status || "").toLowerCase() === "active";
+        const effectivePlan = active && ["pro", "business"].includes(currentPlan)
+            ? currentPlan
+            : "free";
+        const labels = {
+            free: effectivePlan === "free" ? "Current Plan" : "Free Plan",
+            pro: "Choose Pro",
+            business: "Choose Business"
+        };
+
+        if (effectivePlan === "pro") {
+            labels.pro = "Current Plan";
+            labels.business = "Upgrade to Business";
+        } else if (effectivePlan === "business") {
+            labels.business = "Current Plan";
+            labels.pro = "Downgrade to Pro";
+        }
+
+        document.querySelectorAll(".plan-button[data-plan]").forEach((button) => {
+            const plan = button.dataset.plan;
+            button.textContent = labels[plan];
+            button.disabled = plan === effectivePlan;
+        });
+    } catch (error) {
+        console.error("Could not load current plan:", error);
+    }
+}
+
 function toggleComparison() {
     const table = document.getElementById("comparisonTable");
     const arrow = document.getElementById("arrow");

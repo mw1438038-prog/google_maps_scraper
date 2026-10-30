@@ -3,11 +3,15 @@ import hmac
 from datetime import datetime, timezone
 
 import requests
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 
 from flask import Blueprint, current_app, jsonify, request
 
 from extensions import db
+from models.freemius_webhook_event import FreemiusWebhookEvent
 from models.user import User
+from services.plan_limits import PLAN_LIMITS, PLAN_RANK
 
 
 payment_bp = Blueprint("payment", __name__)
@@ -185,7 +189,7 @@ def _get_local_user_for_license(license_data):
             current_app.logger.exception(
                 "Could not retrieve Freemius user details."
             )
-            return None
+            freemius_user = None
 
         email = (
             freemius_user.get("email")
@@ -194,8 +198,8 @@ def _get_local_user_for_license(license_data):
         )
 
         if email:
-            user = User.query.filter_by(
-                email=email.strip().lower()
+            user = User.query.filter(
+                func.lower(User.email) == email.strip().lower()
             ).first()
 
             if user:
@@ -293,7 +297,10 @@ def _sync_license(license_id):
         else None
     )
 
-    old_plan = (user.plan or "free").lower()
+    old_plan = (user.plan or "free").strip().lower()
+    if old_plan not in PLAN_LIMITS:
+        old_plan = "free"
+    old_searches_used = max(int(user.searches_used or 0), 0)
 
     is_expired = (
         expires_at is not None
@@ -306,12 +313,13 @@ def _sync_license(license_id):
         user.subscription_status = (
             "canceled" if is_canceled else "expired"
         )
-        user.searches_limit = 10
+        user.searches_limit = PLAN_LIMITS["free"]["searches"]
+        user.searches_used = PLAN_LIMITS["free"]["searches"]
+        user.searches_rollover_remaining = 0
+        user.free_trial_used = True
         user.subscription_expires_at = expires_at
         user.payment_provider = "freemius"
         user.payment_reference = str(actual_license_id)
-
-        db.session.commit()
 
         current_app.logger.info(
             "Freemius license %s is canceled or expired.",
@@ -328,21 +336,67 @@ def _sync_license(license_id):
         )
         return False
 
-    new_billing_period = (
+    plan_changed = old_plan != plan
+    new_subscription_period = (
         old_license_id != str(actual_license_id)
-        or old_plan != plan
         or old_expiry is None
         or expires_at > old_expiry
     )
 
-    if new_billing_period:
+    if plan_changed:
+        carryover_searches = 0
+        if PLAN_RANK[plan] > PLAN_RANK[old_plan]:
+            previous_base_quota = PLAN_LIMITS[old_plan]["searches"]
+            free_was_already_claimed = (
+                old_plan == "free" and bool(user.free_trial_used)
+            )
+            if not free_was_already_claimed:
+                if old_plan == "free":
+                    carryover_searches = max(
+                        previous_base_quota - old_searches_used,
+                        0,
+                    )
+                else:
+                    old_rollover_total = max(
+                        int(user.searches_limit or 0)
+                        - previous_base_quota,
+                        0,
+                    )
+                    old_rollover_remaining = min(
+                        max(
+                            int(user.searches_rollover_remaining or 0),
+                            0,
+                        ),
+                        old_rollover_total,
+                    )
+                    old_rollover_used = (
+                        old_rollover_total - old_rollover_remaining
+                    )
+                    previous_plan_used = max(
+                        old_searches_used - old_rollover_used,
+                        0,
+                    )
+                    carryover_searches = max(
+                        previous_base_quota - previous_plan_used,
+                        0,
+                    )
+
         user.searches_used = 0
         user.searches_reset_at = now
+        user.searches_rollover_remaining = carryover_searches
+        user.searches_limit = (
+            PLAN_LIMITS[plan]["searches"] + carryover_searches
+        )
+    elif new_subscription_period:
+        # A successful renewal (or a genuinely new same-tier subscription)
+        # starts with the normal allowance, dropping any prior rollover.
+        user.searches_used = 0
+        user.searches_reset_at = now
+        user.searches_rollover_remaining = 0
+        user.searches_limit = PLAN_LIMITS[plan]["searches"]
 
     user.plan = plan
-    user.searches_limit = (
-        500 if plan == "pro" else 1000
-    )
+    user.free_trial_used = True
     user.subscription_status = "active"
     user.subscription_expires_at = expires_at
     user.payment_provider = "freemius"
@@ -353,8 +407,6 @@ def _sync_license(license_id):
         or old_plan != plan
     ):
         user.subscription_started_at = now
-
-    db.session.commit()
 
     current_app.logger.info(
         "Freemius license %s synchronized for local user %s.",
@@ -385,9 +437,10 @@ def _downgrade_license(license_id):
     user.plan = "free"
     user.subscription_status = "expired"
     user.subscription_expires_at = _utc_now()
-    user.searches_limit = 10
-
-    db.session.commit()
+    user.searches_limit = PLAN_LIMITS["free"]["searches"]
+    user.searches_used = PLAN_LIMITS["free"]["searches"]
+    user.searches_rollover_remaining = 0
+    user.free_trial_used = True
 
     current_app.logger.info(
         "Local user %s downgraded after license deletion.",
@@ -421,23 +474,62 @@ def freemius_webhook():
 
     try:
         event = request.get_json(silent=True)
-
         if not isinstance(event, dict):
             return jsonify({
                 "success": False,
                 "message": "Invalid webhook payload.",
             }), 400
 
-        event_type = str(event.get("type", "")).strip()
+        event_type = str(event.get("type", "unknown")).strip() or "unknown"
         license_id = _get_event_license_id(event)
-
-        current_app.logger.info(
-            "Freemius webhook received: %s",
-            event_type,
+        raw_event_id = str(event.get("id") or "").strip()
+        event_id = (
+            f"freemius:{raw_event_id}"
+            if raw_event_id
+            else f"payload:{hashlib.sha256(raw_body).hexdigest()}"
         )
 
-        # Events that can change the latest license state.
+        existing_event = db.session.get(
+            FreemiusWebhookEvent,
+            event_id,
+        )
+        if existing_event:
+            current_app.logger.info(
+                "Ignoring duplicate Freemius event %s (%s).",
+                event_id,
+                event_type,
+            )
+            return jsonify({
+                "success": True,
+                "message": "Duplicate event already processed.",
+            }), 200
+
+        event_record = FreemiusWebhookEvent(
+            event_id=event_id,
+            event_type=event_type,
+        )
+        db.session.add(event_record)
+        try:
+            # Claim the event ID before processing, within the same DB
+            # transaction as the subscription/quota update.
+            db.session.flush()
+        except IntegrityError:
+            db.session.rollback()
+            if db.session.get(FreemiusWebhookEvent, event_id):
+                return jsonify({
+                    "success": True,
+                    "message": "Duplicate event already processed.",
+                }), 200
+            raise
+
+        current_app.logger.info(
+            "Freemius webhook received: %s (event %s).",
+            event_type,
+            event_id,
+        )
+
         license_events = {
+            "payment.created",
             "license.created",
             "license.activated",
             "license.extended",
@@ -446,91 +538,50 @@ def freemius_webhook():
             "license.cancelled",
             "license.expired",
             "license.plan.changed",
+            "license.deleted",
             "subscription.cancelled",
             "subscription.renewal.failed.last",
         }
 
-        # A payment event alone does not prove the license is active.
-        # Retrieve and verify the current license before syncing.
-        if event_type == "payment.created":
-            if not license_id:
-                current_app.logger.warning(
-                    "payment.created has no license ID in the "
-                    "recognized payload fields. No plan was activated."
-                )
-
-                # Acknowledge unrelated/incomplete payment events.
-                # The payload structure must be checked if this repeats.
-                return jsonify({
-                    "success": True,
-                    "message": "Payment received; no license ID found.",
-                }), 200
-
-            synced = _sync_license(license_id)
-
-            if not synced:
-                return jsonify({
-                    "success": False,
-                    "message": "Payment received but license sync failed.",
-                }), 500
-
-            return jsonify({
-                "success": True,
-                "message": "License synchronized.",
-            }), 200
-
-        if event_type == "license.deleted":
-            if not license_id:
-                current_app.logger.warning(
-                    "license.deleted event did not include a license ID."
-                )
-
-                return jsonify({
-                    "success": True,
-                }), 200
-
-            _downgrade_license(license_id)
-
-            return jsonify({
-                "success": True,
-            }), 200
-
         if event_type in license_events:
             if not license_id:
-                current_app.logger.warning(
-                    "Freemius event %s did not include a license ID.",
+                db.session.rollback()
+                current_app.logger.error(
+                    "Freemius event %s has no license ID.",
                     event_type,
                 )
-
-                # Do not report success for a relevant event that
-                # could not be synchronized.
                 return jsonify({
                     "success": False,
                     "message": "License ID missing from webhook.",
                 }), 500
 
-            synced = _sync_license(license_id)
+            if event_type == "license.deleted":
+                _downgrade_license(license_id)
+            else:
+                synced = _sync_license(license_id)
+                if not synced:
+                    db.session.rollback()
+                    return jsonify({
+                        "success": False,
+                        "message": "Could not synchronize license.",
+                    }), 500
 
-            if not synced:
-                return jsonify({
-                    "success": False,
-                    "message": "Could not synchronize license.",
-                }), 500
+        else:
+            current_app.logger.info(
+                "Ignoring unrelated Freemius event: %s",
+                event_type,
+            )
 
-            return jsonify({
-                "success": True,
-                "message": "License synchronized.",
-            }), 200
-
-        # Events unrelated to subscription access are acknowledged.
-        current_app.logger.info(
-            "Ignoring unrelated Freemius event: %s",
-            event_type,
-        )
+        event_record.processed_at = _utc_now()
+        db.session.commit()
 
         return jsonify({
             "success": True,
-            "message": "Event ignored.",
+            "message": (
+                "License synchronized."
+                if event_type in license_events
+                else "Event ignored."
+            ),
         }), 200
 
     except requests.RequestException:
