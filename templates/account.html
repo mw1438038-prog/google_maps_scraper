@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Your Lead Finder account profile." />
-    <title>Account Profile - Lead Finder</title>
+    <meta name="description" content="Your Somo LeadFinder account profile." />
+    <title>Account Profile - Somo LeadFinder</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,6 +15,10 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='profile.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='legal.css') }}"
+    />
   </head>
 
   <body>
@@ -24,7 +28,7 @@
           <div class="brand-logo material-symbols-outlined">location_on</div>
           <div class="brand-text">
             <strong>Google Maps</strong>
-            <span>Lead Finder</span>
+            <span>Somo LeadFinder</span>
           </div>
         </div>
 
@@ -72,7 +76,7 @@
         <header class="top-header">
           <div class="mobile-brand">
             <div class="brand-logo small">LF</div>
-            <strong>Lead Finder</strong>
+            <strong>Somo LeadFinder</strong>
           </div>
           <div class="header-spacer"></div>
           <a
@@ -167,9 +171,9 @@
                   {% if user.plan == "free" %}
                   <strong>$0</strong>
                   <span>free forever</span>
-                  <p>One-time free plan — available only once per user.</p>
+                  <p>Includes 10 searches each month.</p>
                   {% elif user.plan == "pro" %}
-                  <strong>$9</strong>
+                  <strong>$1</strong>
                   <span>/ month</span>
                   {% else %}
                   <strong>$24</strong>
@@ -181,18 +185,20 @@
               <ul class="plan-features">
                 <li>
                   <span>✓</span>
-                  {% if user.plan == "free" %}10 lifetime searches{% elif
-                  user.plan == "pro" %}500 searches per billing cycle{% else
-                  %}1,000 searches per billing cycle{% endif %}
+                  {% if user.plan == "free" %}10 searches per month{% elif
+                  user.plan == "pro" %}1,000 searches per month{% else
+                  %}Unlimited searches{% endif %}
                 </li>
                 <li>
-                  <span></span>
-                  {% if user.plan == "free" %}15 results per search{% elif
-                  user.plan == "pro" %}Unlimited results per search{% else %}
-                  {% endif %}
+                  <span>✓</span>
+                  {% if user.plan == "free" %}Up to 20 results per search{% else
+                  %}All matching results fetched from Google Places*{% endif %}
                 </li>
                 <li><span>✓</span>CSV & Excel export</li>
               </ul>
+              <p class="plan-note">
+                *Subject to Google Places availability and pagination limits.
+              </p>
 
               {% if user.plan == "free" %}
               <a href="{{ url_for('plans.pricing') }}" class="plan-button"
@@ -215,7 +221,8 @@
 
         <footer class="dashboard-footer">
           <span>© 2026 TYB Work</span>
-          <span>Google Maps Lead Finder</span>
+          <span>Somo LeadFinder</span>
+          {% include "_legal_footer_links.html" %}
         </footer>
       </main>
     </div>

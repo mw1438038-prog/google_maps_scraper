@@ -10,6 +10,7 @@ from authlib.integrations.base_client.errors import MismatchingStateError
 
 from extensions import db
 from models.user import User
+from services.monitoring import record_error
 
 
 auth_bp = Blueprint(
@@ -95,6 +96,10 @@ def google_callback():
         # Start a completely fresh OAuth flow instead.
         # -------------------------------------------------
 
+        record_error(
+            "authentication", "WARNING", "Google OAuth state validation failed.",
+            status=400,
+        )
         session.clear()
 
         return redirect(
@@ -111,6 +116,11 @@ def google_callback():
         user_info = oauth.google.userinfo()
 
     if not user_info:
+
+        record_error(
+            "authentication", "ERROR", "Google OAuth user information was unavailable.",
+            status=400,
+        )
 
         return (
             "Unable to get Google account information.",
@@ -131,6 +141,11 @@ def google_callback():
     # -------------------------------------------------
 
     if not google_id or not email:
+
+        record_error(
+            "authentication", "WARNING", "Google OAuth identity data was incomplete.",
+            status=400,
+        )
 
         return (
             "Google account information is incomplete.",

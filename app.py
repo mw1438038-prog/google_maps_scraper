@@ -1,6 +1,4 @@
 
-import logging
-
 from flask import (
     Flask,
     render_template,
@@ -11,13 +9,18 @@ from flask import (
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from config import Config
+from config import Config, validate_production_config
 from extensions import db
+from services.database_startup import initialize_database
+from services.logging_config import configure_logging
 
 # Register models before database initialization
 from models.user import User
 from models.exported_lead import ExportedLead
 from models.freemius_webhook_event import FreemiusWebhookEvent
+from models.error_event import ErrorEvent
+from models.request_metric import RequestMetric
+from models.component_health import ComponentHealth
 
 # Blueprints
 from routes.locations import locations_bp
@@ -30,29 +33,31 @@ from routes.payment import payment_bp
 
 from routes.auth import auth_bp, init_oauth
 from routes.profile import profile_bp
-
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from routes.legal_pages import register_legal_pages
+from services.monitoring import initialize_request_tracking
 
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    validate_production_config(app.config)
+    configure_logging(app)
 
     # Database
     db.init_app(app)
-
-    # Create tables. If the database is unavailable, log the
-    # actual error instead of hiding it.
-    with app.app_context():
-        try:
-            db.create_all()
-            logger.info("Database tables verified successfully.")
-        except Exception:
-            db.session.rollback()
-            logger.exception("Database initialization failed.")
-            raise
+    try:
+        initialize_database(app)
+        app.logger.info("Database schema check completed successfully.")
+    except Exception:
+        db.session.rollback()
+        app.logger.error(
+            "Database initialization or schema check failed.",
+            extra={
+                "category": "neon",
+                "monitoring_exception_type": "DatabaseStartupError",
+            },
+        )
+        raise
 
     # Reverse proxy support
     app.wsgi_app = ProxyFix(
@@ -76,6 +81,8 @@ def create_app():
     app.register_blueprint(payment_bp)
     app.register_blueprint(profile_bp)
 
+    initialize_request_tracking(app)
+
     @app.before_request
     def validate_user_session():
         # Public routes remain accessible without login.
@@ -83,6 +90,10 @@ def create_app():
 
         public_endpoints = {
             "home",
+            "privacy_policy",
+            "terms_conditions",
+            "refund_cancellation_policy",
+            "cookie_policy",
             "pricing_page",
             "auth.google_login",
             "auth.google_callback",
@@ -114,7 +125,13 @@ def create_app():
 
         except Exception:
             db.session.rollback()
-            logger.exception("Could not validate the logged-in user.")
+            app.logger.error(
+                "Could not validate the logged-in user.",
+                extra={
+                    "category": "neon",
+                    "monitoring_exception_type": "DatabaseQueryError",
+                },
+            )
             session.clear()
             return redirect(url_for("home"))
 
@@ -124,6 +141,8 @@ def create_app():
     @app.route("/")
     def home():
         return render_template("home.html")
+
+    register_legal_pages(app)
 
     # Leads dashboard
     @app.route("/leads")

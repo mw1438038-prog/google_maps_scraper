@@ -12,6 +12,11 @@ from extensions import db
 from models.freemius_webhook_event import FreemiusWebhookEvent
 from models.user import User
 from services.plan_limits import PLAN_LIMITS, PLAN_RANK
+from services.quotas import (
+    expire_subscription_to_free,
+    refresh_free_quota,
+)
+from services.monitoring import mark_component_healthy_in_session, record_error
 
 
 payment_bp = Blueprint("payment", __name__)
@@ -73,6 +78,10 @@ def _freemius_get(path):
     ).strip()
 
     if not product_id or not token:
+        record_error(
+            "freemius", "ERROR", "Freemius API configuration is incomplete.",
+            exception=RuntimeError("ConfigurationMissing"), status=503,
+        )
         raise RuntimeError(
             "Freemius product ID or API bearer token is missing."
         )
@@ -82,17 +91,24 @@ def _freemius_get(path):
         f"{product_id}/{path.lstrip('/')}"
     )
 
-    response = requests.get(
-        url,
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/json",
-        },
-        timeout=15,
-    )
-
-    response.raise_for_status()
-    return response.json()
+    try:
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json",
+            },
+            timeout=15,
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.RequestException as error:
+        record_error(
+            "freemius", "ERROR", "Freemius API request failed.",
+            exception=error, status=502,
+        )
+        raise
 
 
 def _verify_freemius_signature(raw_body, signature):
@@ -300,7 +316,26 @@ def _sync_license(license_id):
     old_plan = (user.plan or "free").strip().lower()
     if old_plan not in PLAN_LIMITS:
         old_plan = "free"
+    if old_plan == "free":
+        refresh_free_quota(user, now, commit=False)
     old_searches_used = max(int(user.searches_used or 0), 0)
+
+    if (
+        user.payment_provider == "freemius"
+        and old_license_id
+        and old_license_id != str(actual_license_id)
+        and old_plan in ("pro", "business")
+        and (user.subscription_status or "").strip().lower() == "active"
+        and old_expiry is not None
+        and old_expiry > now
+    ):
+        current_app.logger.warning(
+            "Ignoring stale Freemius license %s for user %s; "
+            "a different active license is linked.",
+            actual_license_id,
+            user.id,
+        )
+        return True
 
     is_expired = (
         expires_at is not None
@@ -309,14 +344,12 @@ def _sync_license(license_id):
 
     # Do not grant paid access to canceled or expired licenses.
     if is_canceled or is_expired:
-        user.plan = "free"
-        user.subscription_status = (
-            "canceled" if is_canceled else "expired"
+        expire_subscription_to_free(
+            user,
+            now,
+            status="canceled" if is_canceled else "expired",
+            commit=False,
         )
-        user.searches_limit = PLAN_LIMITS["free"]["searches"]
-        user.searches_used = PLAN_LIMITS["free"]["searches"]
-        user.searches_rollover_remaining = 0
-        user.free_trial_used = True
         user.subscription_expires_at = expires_at
         user.payment_provider = "freemius"
         user.payment_reference = str(actual_license_id)
@@ -346,46 +379,32 @@ def _sync_license(license_id):
     if plan_changed:
         carryover_searches = 0
         if PLAN_RANK[plan] > PLAN_RANK[old_plan]:
-            previous_base_quota = PLAN_LIMITS[old_plan]["searches"]
-            free_was_already_claimed = (
-                old_plan == "free" and bool(user.free_trial_used)
+            paid_period_is_active = (
+                old_plan == "pro"
+                and (user.subscription_status or "").strip().lower()
+                == "active"
+                and old_expiry is not None
+                and old_expiry > now
             )
-            if not free_was_already_claimed:
-                if old_plan == "free":
-                    carryover_searches = max(
-                        previous_base_quota - old_searches_used,
-                        0,
+            if paid_period_is_active:
+                previous_total_quota = (
+                    max(
+                        int(user.searches_limit or 0),
+                        PLAN_LIMITS[old_plan]["searches"],
                     )
-                else:
-                    old_rollover_total = max(
-                        int(user.searches_limit or 0)
-                        - previous_base_quota,
-                        0,
-                    )
-                    old_rollover_remaining = min(
-                        max(
-                            int(user.searches_rollover_remaining or 0),
-                            0,
-                        ),
-                        old_rollover_total,
-                    )
-                    old_rollover_used = (
-                        old_rollover_total - old_rollover_remaining
-                    )
-                    previous_plan_used = max(
-                        old_searches_used - old_rollover_used,
-                        0,
-                    )
-                    carryover_searches = max(
-                        previous_base_quota - previous_plan_used,
-                        0,
-                    )
+                )
+                carryover_searches = max(
+                    previous_total_quota - old_searches_used,
+                    0,
+                )
 
         user.searches_used = 0
         user.searches_reset_at = now
         user.searches_rollover_remaining = carryover_searches
         user.searches_limit = (
-            PLAN_LIMITS[plan]["searches"] + carryover_searches
+            None
+            if plan == "business"
+            else PLAN_LIMITS[plan]["searches"] + carryover_searches
         )
     elif new_subscription_period:
         # A successful renewal (or a genuinely new same-tier subscription)
@@ -393,7 +412,9 @@ def _sync_license(license_id):
         user.searches_used = 0
         user.searches_reset_at = now
         user.searches_rollover_remaining = 0
-        user.searches_limit = PLAN_LIMITS[plan]["searches"]
+        user.searches_limit = (
+            None if plan == "business" else PLAN_LIMITS[plan]["searches"]
+        )
 
     user.plan = plan
     user.free_trial_used = True
@@ -434,13 +455,14 @@ def _downgrade_license(license_id):
         )
         return True
 
-    user.plan = "free"
-    user.subscription_status = "expired"
-    user.subscription_expires_at = _utc_now()
-    user.searches_limit = PLAN_LIMITS["free"]["searches"]
-    user.searches_used = PLAN_LIMITS["free"]["searches"]
-    user.searches_rollover_remaining = 0
-    user.free_trial_used = True
+    now = _utc_now()
+    expire_subscription_to_free(
+        user,
+        now,
+        status="expired",
+        commit=False,
+    )
+    user.subscription_expires_at = now
 
     current_app.logger.info(
         "Local user %s downgraded after license deletion.",
@@ -465,6 +487,10 @@ def freemius_webhook():
     if not _verify_freemius_signature(raw_body, signature):
         current_app.logger.warning(
             "Rejected Freemius webhook: invalid signature."
+        )
+        record_error(
+            "freemius", "WARNING", "Freemius webhook signature was rejected.",
+            status=401,
         )
 
         return jsonify({
@@ -530,6 +556,7 @@ def freemius_webhook():
 
         license_events = {
             "payment.created",
+            "payment.refund",
             "license.created",
             "license.activated",
             "license.extended",
@@ -540,7 +567,9 @@ def freemius_webhook():
             "license.plan.changed",
             "license.deleted",
             "subscription.cancelled",
+            "subscription.renewal.failed",
             "subscription.renewal.failed.last",
+            "subscription.renewal.retry",
         }
 
         if event_type in license_events:
@@ -573,6 +602,9 @@ def freemius_webhook():
             )
 
         event_record.processed_at = _utc_now()
+        mark_component_healthy_in_session(
+            "freemius", "observed_webhook_processed"
+        )
         db.session.commit()
 
         return jsonify({
@@ -584,11 +616,15 @@ def freemius_webhook():
             ),
         }), 200
 
-    except requests.RequestException:
+    except requests.RequestException as error:
         db.session.rollback()
 
         current_app.logger.exception(
             "Freemius API request failed during webhook processing."
+        )
+        record_error(
+            "freemius", "ERROR", "Freemius webhook provider request failed.",
+            exception=error, status=503,
         )
 
         return jsonify({
@@ -596,11 +632,15 @@ def freemius_webhook():
             "message": "Freemius API request failed.",
         }), 503
 
-    except Exception:
+    except Exception as error:
         db.session.rollback()
 
         current_app.logger.exception(
             "Freemius webhook processing failed."
+        )
+        record_error(
+            "freemius", "ERROR", "Freemius webhook processing failed.",
+            exception=error, status=500,
         )
 
         return jsonify({

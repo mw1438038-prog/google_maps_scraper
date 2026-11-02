@@ -1,5 +1,5 @@
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, session
 from sqlalchemy import case, update
@@ -7,6 +7,11 @@ from sqlalchemy import case, update
 from extensions import db
 from models.user import User
 from services.plan_limits import PLAN_LIMITS
+from services.monitoring import record_error
+from services.quotas import (
+    expire_subscription_to_free,
+    refresh_free_quota,
+)
 
 
 usage_bp = Blueprint("usage", __name__)
@@ -37,9 +42,13 @@ def get_current_user():
 
         return user
 
-    except Exception:
+    except Exception as error:
         db.session.rollback()
         session.clear()
+        record_error(
+            "neon", "ERROR", "Database user lookup failed.",
+            exception=error, status=503,
+        )
         return None
 
 
@@ -79,25 +88,19 @@ def check_subscription_expiry(user):
     expires_at = user.subscription_expires_at
 
     if not expires_at:
+        expire_subscription_to_free(user)
         return True
 
-    now = datetime.utcnow()
-
-    if expires_at.tzinfo is not None:
-        now = datetime.now(expires_at.tzinfo)
+    now = datetime.now(timezone.utc)
+    if expires_at.tzinfo is None:
+        now = now.replace(tzinfo=None)
 
     if now >= expires_at:
         if (
             user.subscription_status != "expired"
             or (user.plan or "free").lower() != "free"
         ):
-            user.subscription_status = "expired"
-            user.plan = "free"
-            user.searches_limit = PLAN_LIMITS["free"]["searches"]
-            user.searches_used = PLAN_LIMITS["free"]["searches"]
-            user.searches_rollover_remaining = 0
-            user.free_trial_used = True
-            db.session.commit()
+            expire_subscription_to_free(user)
 
         return True
 
@@ -116,22 +119,18 @@ def can_search(user):
         return False
 
     plan = get_user_plan(user)
-    limits = get_plan_limits(user)
 
     if plan == "free":
-        if user.free_trial_used:
-            return False
-
-        if user.searches_used >= limits["searches"]:
-            user.free_trial_used = True
-            db.session.commit()
-            return False
-
-        return True
+        refresh_free_quota(user)
+        return user.searches_used < PLAN_LIMITS["free"]["searches"]
 
     if (user.subscription_status or "").lower() != "active":
         return False
 
+    if plan == "business":
+        return True
+
+    limits = get_plan_limits(user)
     quota_limit = max(
         int(user.searches_limit or 0),
         limits["searches"],
@@ -165,15 +164,18 @@ def get_usage(user):
 
     plan = get_user_plan(user)
     limits = get_plan_limits(user)
+    if plan == "free":
+        refresh_free_quota(user)
 
     used = user.searches_used or 0
     free_trial_used = bool(user.free_trial_used)
 
     if plan == "free":
         limit = limits["searches"]
-        remaining = (
-            0 if free_trial_used else max(limit - used, 0)
-        )
+        remaining = max(limit - used, 0)
+    elif plan == "business":
+        limit = None
+        remaining = None
     else:
         limit = max(
             int(user.searches_limit or 0),
@@ -181,7 +183,7 @@ def get_usage(user):
         )
         remaining = max(limit - used, 0)
 
-    if plan != "free" and (
+    if plan == "pro" and (
         subscription_expired
         or (user.subscription_status or "").lower() != "active"
     ):
@@ -213,35 +215,31 @@ def consume_search(user, history_record=None):
         return False
 
     plan = get_user_plan(user)
-    limits = get_plan_limits(user)
-
     if not can_search(user):
         return False
 
-    quota_limit = (
-        limits["searches"]
-        if plan == "free"
-        else max(
-            int(user.searches_limit or 0),
-            limits["searches"],
-        )
-    )
-    conditions = [
-        User.id == user.id,
-        User.searches_used < quota_limit,
-    ]
+    conditions = [User.id == user.id]
 
     if plan == "free":
         conditions.extend([
             User.plan == "free",
-            User.free_trial_used.is_(False),
+            User.searches_used < PLAN_LIMITS["free"]["searches"],
+        ])
+    elif plan == "business":
+        conditions.extend([
+            User.plan == "business",
+            User.subscription_status == "active",
+            User.subscription_expires_at > datetime.utcnow(),
         ])
     else:
         conditions.extend([
             User.plan == plan,
             User.subscription_status == "active",
             User.subscription_expires_at > datetime.utcnow(),
-            User.searches_used < User.searches_limit,
+            User.searches_used < max(
+                int(user.searches_limit or 0),
+                PLAN_LIMITS[plan]["searches"],
+            ),
         ])
 
     statement = update(User).where(*conditions).values(
@@ -251,13 +249,14 @@ def consume_search(user, history_record=None):
         statement = statement.values(
             free_trial_used=case(
                 (
-                    User.searches_used + 1 >= limits["searches"],
+                    User.searches_used + 1
+                    >= PLAN_LIMITS["free"]["searches"],
                     True,
                 ),
                 else_=User.free_trial_used,
             ),
         )
-    else:
+    elif plan == "pro":
         statement = statement.values(
             searches_rollover_remaining=case(
                 (

@@ -2,6 +2,14 @@
 import re
 import requests
 import geonamescache
+from flask import current_app
+
+from services.monitoring import record_error
+from services.map_provider_clients import (
+    ProviderRequestError,
+    request_json,
+)
+from urllib.parse import quote
 
 
 PLACES_SEARCH_URL = (
@@ -9,6 +17,20 @@ PLACES_SEARCH_URL = (
 )
 
 GOOGLE_PAGE_SIZE = 20
+GOOGLE_MAX_PAGES = 3
+GOOGLE_REQUEST_TIMEOUT_SECONDS = 10
+GOOGLE_DETAILS_URL = "https://places.googleapis.com/v1/places/"
+GOOGLE_DETAILS_FIELD_MASK = (
+    "id,displayName,formattedAddress,nationalPhoneNumber,websiteUri,"
+    "rating,userRatingCount,googleMapsUri"
+)
+
+
+class GooglePlacesError(ProviderRequestError):
+    def __init__(self, status_code=None, category="google_places"):
+        self.status_code = status_code
+        self.category = category
+        super().__init__("google_places", status_code)
 
 
 class GooglePlacesService:
@@ -210,24 +232,52 @@ class GooglePlacesService:
         if page_token:
             payload["pageToken"] = page_token
 
-        response = requests.post(
-            PLACES_SEARCH_URL,
-            headers=headers,
-            json=payload,
-            timeout=30,
-        )
-
-        if not response.ok:
-            try:
-                error_data = response.json()
-            except ValueError:
-                error_data = response.text
-
-            raise Exception(
-                f"Google Places API Error: {error_data}"
+        try:
+            return request_json(
+                "google_places",
+                PLACES_SEARCH_URL,
+                headers=headers,
+                params=None,
+                timeout=GOOGLE_REQUEST_TIMEOUT_SECONDS,
+                method="POST",
+                json_body=payload,
             )
+        except ProviderRequestError as error:
+            self._raise_google_error(error)
 
-        return response.json()
+    def get_place_details(self, place_id):
+        try:
+            return request_json(
+                "google_places",
+                f"{GOOGLE_DETAILS_URL}{quote(str(place_id), safe='')}",
+                headers={
+                    "X-Goog-Api-Key": self.api_key,
+                    "X-Goog-FieldMask": GOOGLE_DETAILS_FIELD_MASK,
+                },
+                timeout=GOOGLE_REQUEST_TIMEOUT_SECONDS,
+            )
+        except ProviderRequestError as error:
+            self._raise_google_error(error)
+
+    @staticmethod
+    def _raise_google_error(error):
+        status_code = getattr(error, "status_code", None)
+        category = (
+            "google_quota"
+            if status_code == 429
+            else "google_auth"
+            if status_code in {401, 403}
+            else "google_places"
+        )
+        google_error = GooglePlacesError(status_code, category)
+        record_error(
+            category,
+            "ERROR",
+            "Google Places returned an unsuccessful response.",
+            exception=google_error,
+            status=status_code,
+        )
+        raise google_error from error
 
     # =====================================================
     # SEARCH PLACES
@@ -249,9 +299,10 @@ class GooglePlacesService:
             keyword,
         )
 
-        print(f"[Google Places] Query: {search_query}")
-        print(f"[Google Places] Plan: {plan}")
-        print("[Google Places] Result limit: None")
+        current_app.logger.info(
+            "Google Places search started.",
+            extra={"category": "google_places"},
+        )
 
         all_results = []
         seen_ids = set()
@@ -259,10 +310,11 @@ class GooglePlacesService:
         google_page = 1
         seen_tokens = set()
 
-        while True:
-            print(
-                f"[Google Places] Fetching Google page "
-                f"{google_page}"
+        while google_page <= GOOGLE_MAX_PAGES:
+            current_app.logger.debug(
+                "Fetching Google Places result page %s.",
+                google_page,
+                extra={"category": "google_places"},
             )
 
             data = self._google_search_request(
@@ -272,9 +324,11 @@ class GooglePlacesService:
 
             formatted_results = self._format_results(data)
 
-            print(
-                f"[Google Places] Google page "
-                f"{google_page}: {len(formatted_results)} results"
+            current_app.logger.debug(
+                "Google Places page %s returned %s results.",
+                google_page,
+                len(formatted_results),
+                extra={"category": "google_places"},
             )
 
             for result in formatted_results:
@@ -291,11 +345,17 @@ class GooglePlacesService:
             next_page_token = data.get("nextPageToken")
 
             if not next_page_token:
-                print("[Google Places] No more Google pages.")
+                current_app.logger.debug(
+                    "Google Places pagination completed.",
+                    extra={"category": "google_places"},
+                )
                 break
 
             if next_page_token in seen_tokens:
-                print("[Google Places] Repeated page token; stopping.")
+                current_app.logger.warning(
+                    "Google Places returned a repeated page token.",
+                    extra={"category": "google_places"},
+                )
                 break
 
             seen_tokens.add(next_page_token)
@@ -312,13 +372,10 @@ class GooglePlacesService:
             if self._location_matches(result, country, city)
         ]
 
-        print(
-            f"[Google Places] Unique results: "
-            f"{len(all_results)}"
-        )
-        print(
-            f"[Google Places] After location filter: "
-            f"{len(filtered_results)}"
+        current_app.logger.info(
+            "Google Places search completed with %s results after location filtering.",
+            len(filtered_results),
+            extra={"category": "google_places"},
         )
 
         return {
@@ -342,6 +399,10 @@ class GooglePlacesService:
 
             results.append({
                 "id": place.get("id", ""),
+                "provider_id": place.get("id", ""),
+                "provider_key": "google_maps",
+                "source": "Google Maps",
+                "place_id": place.get("id", ""),
                 "name": name,
                 "address": place.get("formattedAddress", ""),
                 "phone": (

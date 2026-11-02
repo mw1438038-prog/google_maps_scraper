@@ -6,6 +6,8 @@ from flask import (
     jsonify,
 )
 
+from services.monitoring import record_error
+
 
 locations_bp = Blueprint(
     "locations",
@@ -53,14 +55,16 @@ def get_countries():
         })
 
     except Exception as error:
+        record_error(
+            "application", "ERROR", "Could not load country data.",
+            exception=error, status=500,
+        )
 
         return jsonify({
 
             "success": False,
 
-            "message":
-                "Could not load countries: "
-                + str(error),
+            "message": "Could not load countries. Please try again.",
 
         }), 500
 
@@ -171,13 +175,15 @@ def get_cities():
         })
 
     except Exception as error:
+        record_error(
+            "application", "ERROR", "Could not load city data.",
+            exception=error, status=500,
+        )
 
         return jsonify({
 
             "success": False,
 
-            "message":
-                "Could not load cities: "
-                + str(error),
+            "message": "Could not load cities. Please try again.",
 
         }), 500

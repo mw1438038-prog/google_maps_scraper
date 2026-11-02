@@ -10,6 +10,7 @@ from flask import (
 from extensions import db
 from models.user import User
 from services.plan_limits import PLAN_LIMITS
+from services.quotas import refresh_free_quota
 
 
 plans_bp = Blueprint("plans", __name__)
@@ -29,7 +30,7 @@ PLAN_DETAILS = {
     "pro": {
         "name": "Pro",
         "searches": PLAN_LIMITS["pro"]["searches"],
-        "price": 9,
+        "price": 1,
         "billing": "monthly",
     },
     "business": {
@@ -156,18 +157,8 @@ def select_plan():
     # FREE PLAN
     # =================================================
 
-    if user.free_trial_used:
-        return jsonify({
-            "success": False,
-            "message": (
-                "Your Free trial has already been used. "
-                "Please upgrade to Pro or Business."
-            ),
-            "plan": user.plan or "free",
-            "free_trial_used": True,
-        }), 403
-
     if (user.plan or "free").strip().lower() == "free":
+        refresh_free_quota(user)
         return jsonify({
             "success": True,
             "message": "You are already using the Free Plan.",
@@ -185,7 +176,7 @@ def select_plan():
     return jsonify({
         "success": False,
         "message": (
-            "The Free Plan is available only as a one-time trial. "
+            "The Free Plan is available after your paid subscription ends. "
             "Please continue with your current paid plan."
         ),
         "plan": user.plan or "free",

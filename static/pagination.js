@@ -1,410 +1,185 @@
-// =====================================================
-// BACKEND PAGINATION
-// 15 RESULTS PER PAGE
-//
-// NEW SEARCH:
-//     /api/search
-//
-// NEXT / PREVIOUS:
-//     /api/search/page
-//
-// IMPORTANT:
-// Google API aur website scraping sirf NEW SEARCH par
-// chalegi.
-// Pagination cached results use karegi.
-// =====================================================
-
 const RESULTS_PER_PAGE = 15;
+const RELOAD_SEARCH_MESSAGE =
+  "Search result pages are held only in the current browser session. Run a new search after reloading the page.";
 
 let currentPage = 1;
-
 let currentSearchId = "";
+let searchVersion = 0;
 
-// =====================================================
-// SET SEARCH ID
-// =====================================================
+document
+  .getElementById("keyword")
+  .addEventListener("input", invalidateCurrentSearch);
+
+function beginSearchRequest() {
+  searchVersion += 1;
+  return searchVersion;
+}
+
+function isCurrentSearchRequest(version) {
+  return version === searchVersion;
+}
 
 function setSearchId(searchId) {
   currentSearchId = String(searchId || "").trim();
 
-  // Save in hidden input if it exists
   const searchIdInput = document.getElementById("searchId");
-
   if (searchIdInput) {
     searchIdInput.value = currentSearchId;
   }
-
-  console.log("[SEARCH ID SET]", currentSearchId);
 }
-
-// =====================================================
-// GET SEARCH ID
-// =====================================================
 
 function getSearchId() {
-  // First try variable
-  if (currentSearchId) {
-    return currentSearchId;
-  }
-
-  // Then try hidden input
-  const searchIdInput = document.getElementById("searchId");
-
-  if (searchIdInput && searchIdInput.value) {
-    currentSearchId = searchIdInput.value.trim();
-
-    return currentSearchId;
-  }
-
-  return "";
+  return currentSearchId;
 }
 
-// =====================================================
-// LOAD PAGE
-//
-// IMPORTANT:
-// This function NEVER calls Google Places.
-//
-// It only calls:
-//     /api/search/page
-//
-// with:
-//     search_id
-//     page
-// =====================================================
+function renderSearchPage(page = 1) {
+  const total = currentResults.length;
+  const totalPages = Math.ceil(total / RESULTS_PER_PAGE);
+  const requestedPage = Number(page);
+  currentPage = Number.isInteger(requestedPage)
+    ? Math.min(Math.max(requestedPage, 1), Math.max(totalPages, 1))
+    : 1;
 
-async function loadPage(page = 1) {
-  try {
-    // =================================================
-    // GET SEARCH ID
-    // =================================================
-
-    const searchId = getSearchId();
-
-    console.log("[PAGINATION] Search ID:", searchId);
-
-    // =================================================
-    // CHECK SEARCH ID
-    // =================================================
-
-    if (!searchId) {
-      alert("Search session not found. Please perform a new search first.");
-
-      return;
-    }
-
-    // =================================================
-    // PAGE
-    // =================================================
-
-    page = Number(page);
-
-    if (!Number.isInteger(page) || page < 1) {
-      page = 1;
-    }
-
-    // =================================================
-    // REQUEST CACHE
-    // =================================================
-
-    const response = await fetch("/api/search/page", {
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json",
-      },
-
-      body: JSON.stringify({
-        search_id: searchId,
-
-        page: page,
-      }),
-    });
-
-    // =================================================
-    // RESPONSE JSON
-    // =================================================
-
-    const data = await response.json();
-
-    console.log("[PAGINATION RESPONSE]", data);
-
-    // =================================================
-    // ERROR
-    // =================================================
-
-    if (!response.ok || !data.success) {
-      throw new Error(data.message || "Unable to load page.");
-    }
-
-    // =================================================
-    // KEEP SEARCH ID
-    // =================================================
-
-    if (data.search_id) {
-      setSearchId(data.search_id);
-    }
-
-    // =================================================
-    // PAGINATION
-    // =================================================
-
-    const pagination = data.pagination || {};
-
-    currentPage = Number(pagination.page || page);
-
-    // =================================================
-    // RESULTS
-    // =================================================
-
-    const results = Array.isArray(data.results) ? data.results : [];
-
-    // =================================================
-    // KEEP CURRENT RESULTS
-    //
-    // Important for export buttons.
-    // =================================================
-
-    if (typeof currentResults !== "undefined") {
-      currentResults = results;
-    }
-
-    // =================================================
-    // DISPLAY RESULTS
-    // =================================================
-
-    if (typeof displayBackendResults === "function") {
-      displayBackendResults(results, currentPage);
-    } else if (typeof displayResults === "function") {
-      displayResults(results, currentPage);
-    }
-
-    // =================================================
-    // TOTAL RESULTS
-    // =================================================
-
-    const total = Number(pagination.total || 0);
-
-    const totalPages = Number(
-      pagination.total_pages ||
-        Math.max(1, Math.ceil(total / RESULTS_PER_PAGE)),
-    );
-
-    // =================================================
-    // RESULT COUNT
-    // =================================================
-
-    const resultCount = document.getElementById("resultCount");
-
-    if (resultCount) {
-      resultCount.textContent = `${total} results`;
-    }
-
-    // =================================================
-    // STATUS
-    // =================================================
-
-    const status = document.getElementById("status");
-
-    if (status) {
-      status.className = "status success";
-
-      status.textContent = `Showing page ${currentPage} of ${totalPages}. ${total} businesses found.`;
-    }
-
-    // =================================================
-    // PAGINATION UI
-    // =================================================
-
-    updateBackendPagination(pagination);
-  } catch (error) {
-    console.error("[PAGINATION ERROR]", error);
-
-    const status = document.getElementById("status");
-
-    if (status) {
-      status.className = "status error";
-
-      status.textContent = error.message || "Unable to load page.";
-    }
-  }
-}
-
-// =====================================================
-// UPDATE PAGINATION UI
-// =====================================================
-
-function updateBackendPagination(pagination) {
-  const container = document.getElementById("paginationContainer");
-
-  const numbersContainer = document.getElementById("paginationNumbers");
-
-  const previousButton = document.getElementById("prevPageButton");
-
-  const nextButton = document.getElementById("nextPageButton");
-
-  // =================================================
-  // ELEMENT CHECK
-  // =================================================
-
-  if (!container || !numbersContainer || !previousButton || !nextButton) {
-    console.error("Pagination HTML elements not found.");
-
-    return;
-  }
-
-  // =================================================
-  // VALUES
-  // =================================================
-
-  const total = Number(pagination.total || 0);
-
-  const totalPages = Number(
-    pagination.total_pages || Math.ceil(total / RESULTS_PER_PAGE),
+  const start = (currentPage - 1) * RESULTS_PER_PAGE;
+  const visibleResults = currentResults.slice(
+    start,
+    start + RESULTS_PER_PAGE,
   );
 
-  const page = Number(pagination.page || 1);
+  displayResults(visibleResults, currentPage);
 
-  currentPage = page;
+  const resultCount = document.getElementById("resultCount");
+  if (resultCount) {
+    resultCount.textContent = total
+      ? `Showing ${start + 1}–${Math.min(start + visibleResults.length, total)} of ${total}`
+      : "0 results";
+  }
 
-  console.log("[PAGINATION UI]", {
-    page: page,
-    totalPages: totalPages,
-    total: total,
-  });
+  const status = document.getElementById("status");
+  if (status) {
+    status.className = total ? "status success" : "status";
+    status.textContent = total
+      ? `Showing ${start + 1}–${Math.min(start + visibleResults.length, total)} of ${total} businesses.`
+      : "No businesses found.";
+  }
 
-  // =================================================
-  // ONLY ONE PAGE
-  // =================================================
+  updatePaginationControls(total, totalPages);
+}
 
-  if (totalPages <= 1) {
-    container.style.display = "none";
+function updatePaginationControls(total, totalPages) {
+  const container = document.getElementById("paginationContainer");
+  const numbersContainer = document.getElementById("paginationNumbers");
+  const previousButton = document.getElementById("prevPageButton");
+  const nextButton = document.getElementById("nextPageButton");
 
-    numbersContainer.innerHTML = "";
-
-    previousButton.disabled = true;
-
-    nextButton.disabled = true;
-
+  if (!container || !numbersContainer || !previousButton || !nextButton) {
     return;
   }
 
-  // =================================================
-  // SHOW PAGINATION
-  // =================================================
-
-  container.style.display = "flex";
-
-  // =================================================
-  // PREVIOUS BUTTON
-  // =================================================
-
-  previousButton.disabled = !pagination.has_previous;
-
-  previousButton.onclick = function () {
-    if (pagination.has_previous && pagination.previous_page) {
-      loadPage(Number(pagination.previous_page));
-    }
-  };
-
-  // =================================================
-  // NEXT BUTTON
-  // =================================================
-
-  nextButton.disabled = !pagination.has_next;
-
-  nextButton.onclick = function () {
-    if (pagination.has_next && pagination.next_page) {
-      loadPage(Number(pagination.next_page));
-    }
-  };
-
-  // =================================================
-  // PAGE NUMBERS
-  // =================================================
-
   numbersContainer.innerHTML = "";
+  container.style.display = totalPages > 1 ? "flex" : "none";
+  previousButton.disabled = currentPage <= 1;
+  nextButton.disabled = currentPage >= totalPages;
+  previousButton.onclick = () => renderSearchPage(currentPage - 1);
+  nextButton.onclick = () => renderSearchPage(currentPage + 1);
 
-  for (let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
+  for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) {
     const button = document.createElement("button");
-
     button.type = "button";
-
     button.className = "pagination-number";
-
     button.textContent = pageNumber;
+    button.setAttribute("aria-label", `Page ${pageNumber}`);
+    button.setAttribute(
+      "aria-current",
+      pageNumber === currentPage ? "page" : "false",
+    );
 
-    // =================================================
-    // ACTIVE PAGE
-    // =================================================
-
-    if (pageNumber === page) {
+    if (pageNumber === currentPage) {
       button.classList.add("active");
     }
 
-    // =================================================
-    // PAGE CLICK
-    // =================================================
-
-    button.onclick = function () {
-      loadPage(pageNumber);
-    };
-
+    button.onclick = () => renderSearchPage(pageNumber);
     numbersContainer.appendChild(button);
   }
 }
 
-// =====================================================
-// RESET PAGINATION
-//
-// ONLY CALL THIS WHEN USER STARTS A COMPLETELY
-// NEW SEARCH.
-// =====================================================
-
 function resetPagination() {
   currentPage = 1;
-
   currentSearchId = "";
 
   const searchIdInput = document.getElementById("searchId");
-
   if (searchIdInput) {
     searchIdInput.value = "";
   }
 
   const container = document.getElementById("paginationContainer");
-
   const numbersContainer = document.getElementById("paginationNumbers");
-
   const previousButton = document.getElementById("prevPageButton");
-
   const nextButton = document.getElementById("nextPageButton");
 
   if (container) {
     container.style.display = "none";
   }
-
   if (numbersContainer) {
     numbersContainer.innerHTML = "";
   }
-
   if (previousButton) {
     previousButton.disabled = true;
   }
-
   if (nextButton) {
     nextButton.disabled = true;
   }
 }
 
-// =====================================================
-// SET CURRENT PAGE
-// =====================================================
+function clearSearchResults(message = RELOAD_SEARCH_MESSAGE) {
+  currentResults = [];
+  resetPagination();
 
-function setCurrentPage(page) {
-  page = Number(page);
-
-  if (Number.isInteger(page) && page >= 1) {
-    currentPage = page;
+  const csvButton = document.getElementById("csvButton");
+  const excelButton = document.getElementById("excelButton");
+  if (csvButton) {
+    csvButton.disabled = true;
   }
+  if (excelButton) {
+    excelButton.disabled = true;
+  }
+
+  const resultCount = document.getElementById("resultCount");
+  if (resultCount) {
+    resultCount.textContent = "0 results";
+  }
+
+  const resultsBody = document.getElementById("resultsBody");
+  if (resultsBody) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 15;
+    cell.className = "no-results";
+    cell.textContent = message;
+    row.appendChild(cell);
+    resultsBody.replaceChildren(row);
+  }
+
+  const status = document.getElementById("status");
+  if (status) {
+    status.className = "status";
+    status.textContent = message;
+  }
+}
+
+function invalidateCurrentSearch() {
+  searchVersion += 1;
+
+  const searchButton = document.getElementById("searchButton");
+  if (searchButton) {
+    searchButton.disabled = false;
+    searchButton.textContent = "🔍 Search Google Maps";
+  }
+
+  if (!currentResults.length && !currentSearchId) {
+    resetPagination();
+    return;
+  }
+
+  clearSearchResults("Search criteria changed. Run a new search to view results.");
 }

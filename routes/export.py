@@ -17,7 +17,7 @@ from openpyxl import Workbook
 from extensions import db
 from models.search_history import SearchHistory
 from models.exported_lead import ExportedLead
-from routes.usage import get_current_user
+from routes.usage import get_current_user, get_plan_limits
 
 
 # =========================================================
@@ -42,92 +42,36 @@ def _get_history(search_id, user_id):
 
 
 def _save_exported_leads(user, search_id, results):
-    """
-    Save leads only when an export is requested.
-    Avoid saving duplicate leads for the same user.
-    """
-
     if not user or not results:
         return
 
     history = _get_history(search_id, user.id)
-
-    # Do not save leads belonging to an unknown search.
     if not history:
         return
 
     for lead in results:
-        if not isinstance(lead, dict):
+        if (
+            not isinstance(lead, dict)
+            or "Google Maps" not in lead.get("source", "")
+        ):
             continue
 
-        name = str(lead.get("name") or "").strip()
-
-        if not name:
+        place_id = str(lead.get("place_id") or "").strip()
+        if not place_id or len(place_id) > 255:
             continue
 
-        place_id = (
-            lead.get("place_id")
-            or lead.get("id")
-            or None
-        )
-
-        address = str(
-            lead.get("address") or ""
-        ).strip() or None
-
-        # Find an already-saved lead belonging to this user.
-        existing = None
-
-        if place_id:
-            existing = ExportedLead.query.filter_by(
-                user_id=user.id,
-                place_id=str(place_id),
-            ).first()
-
-        if not existing:
-            query = ExportedLead.query.filter(
-                ExportedLead.user_id == user.id,
-                ExportedLead.name == name,
-            )
-
-            if address:
-                query = query.filter(
-                    ExportedLead.address == address
-                )
-            else:
-                query = query.filter(
-                    ExportedLead.address.is_(None)
-                )
-
-            existing = query.first()
-
+        existing = ExportedLead.query.filter_by(
+            user_id=user.id,
+            place_id=place_id,
+        ).first()
         if existing:
-            # Keep existing record; don't create a duplicate.
             continue
-
-        rating = _to_float(lead.get("rating"))
-        reviews = _to_int(lead.get("reviews"))
-
-        types = lead.get("types")
 
         db.session.add(
             ExportedLead(
                 user_id=user.id,
-                place_id=str(place_id) if place_id else None,
-                name=name,
-                address=address,
-                phone=lead.get("phone") or None,
-                website=lead.get("website") or None,
-                email=lead.get("email") or None,
-                facebook=lead.get("facebook") or None,
-                instagram=lead.get("instagram") or None,
-                linkedin=lead.get("linkedin") or None,
-                twitter=lead.get("twitter") or None,
-                other_social=lead.get("other_social") or None,
-                rating=rating,
-                reviews=reviews,
-                maps_url=lead.get("maps_url") or None,
-                types=types,
+                place_id=place_id,
+                name="Google Maps place",
                 country=history.country,
                 city=history.city,
                 keyword=history.keyword,
@@ -160,66 +104,88 @@ def _record_export(search_id, results, user=None):
     db.session.commit()
 
 
-def _to_float(value):
-    if value in (None, ""):
-        return None
+def _history_export_rows(history, result_limit=None):
+    allowed_sources = {"Google Maps"}
+    query = " in ".join(
+        part
+        for part in (
+            str(history.keyword or "").strip(),
+            ", ".join(
+                part
+                for part in (
+                    str(history.city or "").strip(),
+                    str(history.country or "").strip(),
+                )
+                if part
+            ),
+        )
+        if part
+    )
+    export_rows = []
 
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
+    for result in history.results or []:
+        if not isinstance(result, dict):
+            continue
+
+        raw_sources = result.get("source") or result.get("sources")
+        if isinstance(raw_sources, list):
+            source_candidates = raw_sources
+        elif isinstance(raw_sources, str):
+            source_candidates = raw_sources.split(",")
+        else:
+            source_candidates = ["Google Maps"]
+
+        sources = []
+        for candidate in source_candidates:
+            source = str(candidate).strip()
+            if source in allowed_sources and source not in sources:
+                sources.append(source)
+        if not sources:
+            continue
+
+        place_id = ""
+        if "Google Maps" in sources:
+            place_id = str(
+                result.get("google_place_id")
+                or result.get("place_id")
+                or result.get("id")
+                or ""
+            ).strip()
+            if len(place_id) > 255 or any(
+                ord(character) < 32 or ord(character) == 127
+                for character in place_id
+            ):
+                place_id = ""
+
+        export_rows.append({
+            "source": ", ".join(sources),
+            "place_id": place_id,
+            "query": query,
+        })
+
+    return (
+        export_rows[:result_limit]
+        if result_limit is not None
+        else export_rows
+    )
 
 
-def _to_int(value):
-    if value in (None, ""):
-        return None
-
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
+def _safe_spreadsheet_cell(value):
+    text = "" if value is None else str(value)
+    if text.lstrip().startswith(("=", "+", "-", "@")):
+        return "'" + text
+    return text
 
 
-def _export_rows(results):
-    headers = [
-        "Business Name",
-        "Phone",
-        "Website",
-        "Email",
-        "Facebook",
-        "Instagram",
-        "LinkedIn",
-        "Twitter",
-        "Other Social",
-        "Location",
-        "Rating",
-        "Reviews",
-        "Google Maps",
-        "Types",
-    ]
-
-    fields = [
-        "name",
-        "phone",
-        "website",
-        "email",
-        "facebook",
-        "instagram",
-        "linkedin",
-        "twitter",
-        "other_social",
-        "address",
-        "rating",
-        "reviews",
-        "maps_url",
-        "types",
-    ]
-
-    return headers, fields
+def _export_rows():
+    return (
+        ["Source", "Google Place ID", "Search Query"],
+        ["source", "place_id", "query"],
+    )
 
 
 def _build_csv(results):
-    headers, fields = _export_rows(results)
+    headers, fields = _export_rows()
 
     output = StringIO(newline="")
     output.write("\ufeff")
@@ -234,7 +200,7 @@ def _build_csv(results):
     for lead in results:
         if isinstance(lead, dict):
             writer.writerow([
-                lead.get(field, "")
+                _safe_spreadsheet_cell(lead.get(field, ""))
                 for field in fields
             ])
 
@@ -242,36 +208,25 @@ def _build_csv(results):
 
 
 def _build_excel(results):
-    headers, fields = _export_rows(results)
+    headers, fields = _export_rows()
 
     workbook = Workbook()
     worksheet = workbook.active
-    worksheet.title = "Google Maps Leads"
+    worksheet.title = "Somo LeadFinder"
 
     worksheet.append(headers)
 
     for lead in results:
         if isinstance(lead, dict):
             worksheet.append([
-                lead.get(field, "")
+                _safe_spreadsheet_cell(lead.get(field, ""))
                 for field in fields
             ])
 
     column_widths = {
-        "A": 40,
-        "B": 20,
-        "C": 45,
-        "D": 35,
-        "E": 45,
-        "F": 45,
-        "G": 45,
-        "H": 45,
-        "I": 60,
-        "J": 70,
-        "K": 12,
-        "L": 12,
-        "M": 60,
-        "N": 40,
+        "A": 30,
+        "B": 36,
+        "C": 80,
     }
 
     for column, width in column_widths.items():
@@ -323,10 +278,20 @@ def export_csv():
             "message": "Search history not found. Please search again.",
         }), 404
 
-    csv_data = _build_csv(results)
+    export_rows = _history_export_rows(
+        history,
+        result_limit=get_plan_limits(user)["results_per_search"],
+    )
+    if not export_rows:
+        return jsonify({
+            "success": False,
+            "message": "No permitted provider identifiers are available to export.",
+        }), 400
+
+    csv_data = _build_csv(export_rows)
 
     try:
-        _record_export(search_id, results, user=user)
+        _record_export(search_id, export_rows, user=user)
     except Exception:
         db.session.rollback()
         raise
@@ -336,7 +301,7 @@ def export_csv():
         mimetype="text/csv; charset=utf-8",
         headers={
             "Content-Disposition":
-                'attachment; filename="google_maps_leads.csv"'
+                'attachment; filename="somo_leadfinder_leads.csv"'
         },
     )
 
@@ -373,10 +338,20 @@ def export_excel():
             "message": "Search history not found. Please search again.",
         }), 404
 
-    output = _build_excel(results)
+    export_rows = _history_export_rows(
+        history,
+        result_limit=get_plan_limits(user)["results_per_search"],
+    )
+    if not export_rows:
+        return jsonify({
+            "success": False,
+            "message": "No permitted provider identifiers are available to export.",
+        }), 400
+
+    output = _build_excel(export_rows)
 
     try:
-        _record_export(search_id, results, user=user)
+        _record_export(search_id, export_rows, user=user)
     except Exception:
         db.session.rollback()
         raise
@@ -384,7 +359,7 @@ def export_excel():
     return send_file(
         output,
         as_attachment=True,
-        download_name="google_maps_leads.xlsx",
+        download_name="somo_leadfinder_leads.xlsx",
         mimetype=(
             "application/vnd.openxmlformats-officedocument."
             "spreadsheetml.sheet"
@@ -425,7 +400,10 @@ def export_search_history(search_id, file_type):
             "message": "Search history not found.",
         }), 404
 
-    results = history.results or []
+    results = _history_export_rows(
+        history,
+        result_limit=get_plan_limits(user)["results_per_search"],
+    )
 
     if not results:
         return jsonify({
@@ -458,7 +436,7 @@ def export_search_history(search_id, file_type):
         file_data,
         as_attachment=True,
         download_name=(
-            f"google_maps_leads_{history.city}.{extension}"
+            f"somo_leadfinder_leads_{history.city}.{extension}"
         ),
         mimetype=mimetype,
     )

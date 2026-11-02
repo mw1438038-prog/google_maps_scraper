@@ -1,5 +1,6 @@
 
 from datetime import datetime, timedelta
+from urllib.parse import quote
 
 from flask import (
     Blueprint,
@@ -171,19 +172,18 @@ def section(view):
         dashboard_data["all_leads"] = [
             {
                 "id": lead.id,
-                "name": lead.name,
-                "address": lead.address,
-                "phone": lead.phone,
-                "website": lead.website,
-                "email": lead.email,
-                "facebook": lead.facebook,
-                "instagram": lead.instagram,
-                "linkedin": lead.linkedin,
-                "twitter": lead.twitter,
-                "other_social": lead.other_social,
-                "rating": lead.rating,
-                "reviews": lead.reviews,
-                "maps_url": lead.maps_url,
+                "name": (
+                    "Google Maps place"
+                    if lead.place_id
+                    else "Legacy saved result"
+                ),
+                "source": "Google Maps" if lead.place_id else "Legacy",
+                "maps_url": (
+                    "https://www.google.com/maps/search/?api=1"
+                    f"&query_place_id={quote(lead.place_id, safe='')}"
+                    if lead.place_id
+                    else ""
+                ),
                 "query": _format_query(
                     lead.keyword,
                     lead.city,
@@ -277,12 +277,19 @@ def _get_profile_data(user):
     plan = (user.plan or "free").lower()
     searches_limit = usage["limit"]
 
-    usage_percentage = min(
-        searches_used / max(searches_limit, 1) * 100,
-        100,
+    usage_percentage = (
+        min(searches_used / max(searches_limit, 1) * 100, 100)
+        if searches_limit is not None
+        else 0
     )
 
     searches_remaining = usage["remaining"]
+    searches_limit_display = (
+        "Unlimited" if searches_limit is None else searches_limit
+    )
+    searches_remaining_display = (
+        "Unlimited" if searches_remaining is None else searches_remaining
+    )
 
     plan_names = {
         "free": "Free",
@@ -316,9 +323,13 @@ def _get_profile_data(user):
         "plan_name": plan_name,
         "searches_used": searches_used,
         "searches_limit": searches_limit,
+        "searches_limit_display": searches_limit_display,
         "searches_remaining": searches_remaining,
+        "searches_remaining_display": searches_remaining_display,
         "usage_percentage": usage_percentage,
-        "usage_percentage_display": f"{usage_percentage:g}",
+        "usage_percentage_display": (
+            "Unlimited" if searches_limit is None else f"{usage_percentage:g}"
+        ),
         "subscription_status": (
             user.subscription_status or "inactive"
         ),
@@ -455,11 +466,18 @@ def _get_dashboard_data(user):
 
     recent_leads = [
         {
-            "name": lead.name,
-            "address": lead.address,
-            "rating": lead.rating,
-            "reviews": lead.reviews,
-            "maps_url": lead.maps_url,
+            "name": (
+                "Google Maps place"
+                if lead.place_id
+                else "Legacy saved result"
+            ),
+            "source": "Google Maps" if lead.place_id else "Legacy",
+            "maps_url": (
+                "https://www.google.com/maps/search/?api=1"
+                f"&query_place_id={quote(lead.place_id, safe='')}"
+                if lead.place_id
+                else ""
+            ),
             "query": _format_query(
                 lead.keyword,
                 lead.city,

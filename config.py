@@ -6,7 +6,58 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def _int_setting(name, default, minimum=1):
+    try:
+        return max(minimum, int(os.getenv(name, str(default))))
+    except (TypeError, ValueError):
+        return default
+
+
+def _bool_setting(name, default=True):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def is_vercel_production(environ=None):
+    """Treat checkout as live only inside a marked Vercel Production runtime."""
+    environ = os.environ if environ is None else environ
+    return (
+        environ.get("VERCEL", "") == "1"
+        and environ.get("VERCEL_ENV", "").strip().lower() == "production"
+    )
+
+
+def is_vercel_runtime(environ=None):
+    environ = os.environ if environ is None else environ
+    return (
+        environ.get("VERCEL", "") == "1"
+        or environ.get("VERCEL_ENV", "").strip().lower()
+        in {"production", "preview", "development"}
+    )
+
+
+def validate_production_config(config):
+    if config.get("IS_PRODUCTION") and not str(
+        config.get("SECRET_KEY") or ""
+    ).strip():
+        raise RuntimeError(
+            "SECRET_KEY must be configured for Vercel Production."
+        )
+
+
 class Config:
+
+    # =====================================================
+    # APPLICATION MONITORING AND LOGGING
+    # =====================================================
+
+    MONITORING_RETENTION_DAYS = 90
+    MONITORING_SLOW_REQUEST_MS = int(
+        _int_setting("MONITORING_SLOW_REQUEST_MS", 2000)
+    )
+    LOCAL_LOG_PATH = os.getenv("LOCAL_LOG_PATH", "")
 
     # =====================================================
     # GOOGLE MAPS
@@ -16,6 +67,7 @@ class Config:
         "GOOGLE_MAPS_API_KEY",
         ""
     )
+    GOOGLE_MAPS_ENABLED = _bool_setting("GOOGLE_MAPS_ENABLED")
 
     # =====================================================
     # GOOGLE LOGIN
@@ -60,10 +112,20 @@ class Config:
         ""
     )
 
+    FREEMIUS_PUBLIC_KEY = os.getenv(
+        "FREEMIUS_PUBLIC_KEY",
+        ""
+    )
+
     FREEMIUS_WEBHOOK_ID = os.getenv(
         "FREEMIUS_WEBHOOK_ID",
         ""
     )
+
+    # Missing Vercel runtime markers fail closed to sandbox mode.
+    IS_VERCEL_RUNTIME = is_vercel_runtime()
+    IS_PRODUCTION = is_vercel_production()
+    FREEMIUS_SANDBOX = not IS_PRODUCTION
 
     # =====================================================
     # DATABASE

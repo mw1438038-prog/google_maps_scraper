@@ -3,16 +3,16 @@
 PLAN_LIMITS = {
     "free": {
         "searches": 10,
-        "results_per_search": 15,
+        "results_per_search": 20,
     },
     "pro": {
-        "searches": 500,
-        "results_per_search": 100,
+        "searches": 1000,
+        "results_per_search": None,
         "duration_days": 30,
     },
     "business": {
-        "searches": 1000,
-        "results_per_search": 200,
+        "searches": None,
+        "results_per_search": None,
         "duration_days": 30,
     },
 }

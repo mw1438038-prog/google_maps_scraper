@@ -1,6 +1,7 @@
 
-from urllib.parse import urlencode
-from urllib.parse import urlparse
+import hashlib
+import time
+from urllib.parse import parse_qsl, urlencode, urlparse, urlsplit, urlunsplit
 
 import requests
 
@@ -16,6 +17,8 @@ from flask import (
 
 from extensions import db
 from models.user import User
+from services.monitoring import record_error
+from services.plan_limits import PLAN_LIMITS
 
 
 checkout_bp = Blueprint("checkout", __name__)
@@ -26,19 +29,19 @@ PLAN_DETAILS = {
     "free": {
         "name": "Free Plan",
         "price": 0,
-        "searches": 10,
+        "searches": PLAN_LIMITS["free"]["searches"],
         
     },
     "pro": {
         "name": "Pro Plan",
-        "price": 9,
-        "searches": 500,
+        "price": 1,
+        "searches": PLAN_LIMITS["pro"]["searches"],
         
     },
     "business": {
         "name": "Business Plan",
         "price": 24,
-        "searches": 1000,
+        "searches": PLAN_LIMITS["business"]["searches"],
         
     },
 }
@@ -66,17 +69,72 @@ def get_freemius_plan_id(plan):
 
 
 def _freemius_post(path, token, payload):
-    response = requests.post(
-        f"{FREEMIUS_API_BASE}/{path.lstrip('/')}",
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/json",
-        },
-        json=payload,
-        timeout=20,
+    try:
+        response = requests.post(
+            f"{FREEMIUS_API_BASE}/{path.lstrip('/')}",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json",
+            },
+            json=payload,
+            timeout=20,
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.RequestException as error:
+        record_error(
+            "freemius", "ERROR", "Freemius checkout API request failed.",
+            exception=error, status=502,
+        )
+        raise
+
+
+def _apply_checkout_environment(checkout_url):
+    """Add Freemius's signed sandbox context outside Vercel Production."""
+    parts = urlsplit(checkout_url)
+    query = [
+        (key, value)
+        for key, value in parse_qsl(parts.query, keep_blank_values=True)
+        if key not in {"sandbox", "s_ctx_ts"}
+    ]
+
+    if not current_app.config.get("FREEMIUS_SANDBOX", True):
+        if len(query) == len(parse_qsl(parts.query, keep_blank_values=True)):
+            return checkout_url
+        return urlunsplit(
+            (parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment)
+        )
+
+    product_id = str(
+        current_app.config.get("FREEMIUS_PRODUCT_ID") or ""
+    ).strip()
+    product_secret = str(
+        current_app.config.get("FREEMIUS_PRODUCT_SECRET_KEY") or ""
+    ).strip()
+    public_key = str(
+        current_app.config.get("FREEMIUS_PUBLIC_KEY") or ""
+    ).strip()
+    if not product_id or not product_secret or not public_key:
+        raise RuntimeError(
+            "Freemius sandbox checkout credentials are not configured."
+        )
+
+    context = str(int(time.time() * 1000))
+    token_material = (
+        context + product_id + product_secret + public_key + "checkout"
     )
-    response.raise_for_status()
-    return response.json()
+    sandbox_token = hashlib.md5(
+        token_material.encode("utf-8")
+    ).hexdigest()
+    query.extend((
+        ("sandbox", sandbox_token),
+        ("s_ctx_ts", context),
+    ))
+
+    return urlunsplit(
+        (parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment)
+    )
 
 
 @checkout_bp.route("/checkout", methods=["GET"])
@@ -165,6 +223,10 @@ def start_checkout():
         current_app.logger.error(
             "Freemius product ID or plan ID is missing."
         )
+        record_error(
+            "freemius", "ERROR", "Freemius checkout configuration is incomplete.",
+            status=503,
+        )
         return {
             "success": False,
             "message": "Freemius checkout is not configured yet.",
@@ -208,7 +270,13 @@ def start_checkout():
                 or not parsed_checkout.hostname.endswith(".freemius.com")
             ):
                 raise ValueError("Freemius returned an invalid checkout URL.")
-        except (requests.RequestException, ValueError, AttributeError):
+            checkout_url = _apply_checkout_environment(checkout_url)
+        except (
+            requests.RequestException,
+            ValueError,
+            AttributeError,
+            RuntimeError,
+        ):
             current_app.logger.exception(
                 "Could not create a Freemius plan change checkout link."
             )
@@ -231,6 +299,20 @@ def start_checkout():
         f"https://checkout.freemius.com/product/{product_id}/plan/{plan_id}/"
         f"?{urlencode({'user_email': user.email, 'readonly_user': 'true'})}"
     )
+    try:
+        checkout_url = _apply_checkout_environment(checkout_url)
+    except RuntimeError:
+        current_app.logger.error(
+            "Freemius sandbox checkout credentials are not configured."
+        )
+        record_error(
+            "freemius", "ERROR", "Freemius sandbox configuration is incomplete.",
+            exception=RuntimeError("ConfigurationMissing"), status=503,
+        )
+        return {
+            "success": False,
+            "message": "Freemius sandbox checkout is not configured yet.",
+        }, 503
 
     return {
         "success": True,
@@ -282,8 +364,12 @@ def billing_portal():
 
         return redirect(portal_link)
 
-    except (requests.RequestException, ValueError, AttributeError):
+    except (requests.RequestException, ValueError, AttributeError) as error:
         current_app.logger.exception(
             "Could not create a Freemius customer portal link."
+        )
+        record_error(
+            "freemius", "ERROR", "Freemius customer portal request failed.",
+            exception=error, status=502,
         )
         return redirect(url_for("profile.profile"))

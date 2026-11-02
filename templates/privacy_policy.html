@@ -1,0 +1,114 @@
+{% extends "_legal_layout.html" %}
+
+{% block legal_content %}
+  <section id="information-we-receive">
+    <h2>Information we receive</h2>
+    <p>
+      This policy describes how <strong>[BUSINESS / LEGAL NAME]</strong>
+      (“we,” “us,” or “our”) handles information through Somo LeadFinder.
+      Replace the bracketed business details and contact information before
+      publication.
+    </p>
+    <p>
+      If you sign in with Google, Google OAuth supplies account identifiers
+      and profile information such as your name, email address, and profile
+      picture when provided. The application stores account information
+      needed to identify your user account, such as Google identity, email,
+      name, and profile image.
+    </p>
+    <p>
+      Search history can include the keyword, city, country, time, result
+      count, and export activity. For new searches, the application retains
+      source labels and Google Places Place IDs where available. Full provider
+      result details are returned for the active browser session and are not
+      saved in the application's new search-history records. My Leads stores
+      Google Place IDs and the related search metadata so that Google details
+      can be requested when you choose to view them. Current CSV and Excel
+      exports contain provider source labels, Google Place IDs, and the search
+      query rather than full provider details.
+    </p>
+    <p>
+      Older records created before these data-handling changes may contain
+      additional lead details. Those records are not automatically rewritten
+      or deleted by this update.
+    </p>
+  </section>
+
+  <section id="cookies-and-sessions">
+    <h2>Cookies and sessions</h2>
+    <p>
+      The application uses a browser session cookie to maintain sign-in and
+      service state. Your browser also temporarily holds search results in
+      memory for the active page, including while you move between result
+      pages. Reloading or closing that page clears that in-memory result set.
+    </p>
+  </section>
+
+  <section id="map-and-account-providers">
+    <h2>Map and account providers</h2>
+    <p>
+      Google OAuth and Google Places are used for sign-in and Google Maps
+      search when configured. Searches send the keyword and selected
+      location to Google Places. Google Places content is displayed
+      with Google attribution, and this application stores Google Place IDs
+      rather than retaining full Google Places content for new searches.
+    </p>
+    <p>
+      Freemius handles subscription checkout and payment processing. The
+      application receives subscription and transaction-related webhook
+      information needed to manage plan status; payment card details are
+      handled by the payment provider. The application may store provider
+      identifiers, plan, subscription status, and expiry/usage information
+      needed to administer account access; it does not need to store payment
+      card details.
+    </p>
+  </section>
+
+  <section id="storage-sharing-retention">
+    <h2>Storage, sharing, and retention</h2>
+    <p>
+      Account, usage, search-history, export metadata, subscription, and
+      operational records are stored in the application's configured
+      database. Search terms and locations are sent to Google Places to
+      perform searches. The application does not sell personal information.
+      Providers may process information under their own terms and privacy
+      notices.
+    </p>
+    <p>
+      Search history and saved Place IDs do not currently have an automatic
+      deletion schedule. Monitoring records have a 90-day retention target
+      and are subject to the application's cleanup process. Export files
+      downloaded to your device are outside the application's storage.
+    </p>
+  </section>
+
+  <section id="security">
+    <h2>Security</h2>
+    <p>
+      The application uses authenticated sessions and access checks for
+      account features. No method of internet transmission or storage can be
+      described as completely secure; users should protect their account and
+      downloaded files.
+    </p>
+  </section>
+
+  <section id="your-choices-and-requests">
+    <h2>Your choices and requests</h2>
+    <p>
+      You may stop using a connected provider by signing out or by disabling
+      that provider in the application configuration. To ask about access,
+      correction, or deletion of account-related information, contact
+      <strong>[PRIVACY / SUPPORT EMAIL]</strong>. Requests may require
+      account verification. The operator should review and respond to
+      requests under applicable law.
+    </p>
+    <p>
+      We may update this notice when the application or its providers change.
+      The updated date above indicates the most recent policy revision.
+    </p>
+    <p>
+      Operator: <strong>[BUSINESS / LEGAL NAME]</strong> ·
+      <strong>[WEBSITE URL]</strong>.
+    </p>
+  </section>
+{% endblock %}

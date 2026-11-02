@@ -72,7 +72,7 @@ class User(db.Model):
 
     searches_limit = db.Column(
         db.Integer,
-        nullable=False,
+        nullable=True,
         default=10
     )
 

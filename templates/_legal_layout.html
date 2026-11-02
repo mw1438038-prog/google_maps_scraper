@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="{{ legal_page.description }}" />
+    <title>{{ legal_page.title }} - Somo LeadFinder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='legal.css') }}" />
+  </head>
+  <body class="legal-document">
+    <header class="legal-topbar">
+      <a class="legal-brand" href="/">
+        <span class="legal-brand-mark" aria-hidden="true">S</span>
+        <span>Somo LeadFinder</span>
+      </a>
+      <a class="legal-home-link" href="/">Back to website <span aria-hidden="true">→</span></a>
+    </header>
+
+    <div class="legal-shell">
+      <section class="legal-hero" aria-labelledby="legal-page-title">
+        <span class="legal-eyebrow">LEGAL</span>
+        <h1 id="legal-page-title">{{ legal_page.title }}</h1>
+        <p class="legal-intro">{{ legal_page.description }}</p>
+        <p class="legal-updated"><strong>Last updated</strong> · November 2, 2026</p>
+      </section>
+
+      <main class="legal-layout">
+        <details class="legal-mobile-toc">
+          <summary>On this page</summary>
+          <nav class="legal-toc" aria-label="Table of contents">
+            <span class="legal-toc-title">ON THIS PAGE</span>
+            <ul>
+              {% for section_id, section_title in legal_page.sections %}
+                <li><a href="#{{ section_id }}">{{ section_title }}</a></li>
+              {% endfor %}
+            </ul>
+          </nav>
+        </details>
+
+        <nav class="legal-toc legal-toc-desktop" aria-label="Table of contents">
+          <span class="legal-toc-title">ON THIS PAGE</span>
+          <ul>
+            {% for section_id, section_title in legal_page.sections %}
+              <li><a href="#{{ section_id }}">{{ section_title }}</a></li>
+            {% endfor %}
+          </ul>
+        </nav>
+
+        <article class="legal-content">
+          {% block legal_content %}{% endblock %}
+        </article>
+      </main>
+
+      <section class="legal-related" aria-labelledby="related-policies-title">
+        <h2 id="related-policies-title">Related policies</h2>
+        <p class="legal-related-intro">More information about using Somo LeadFinder.</p>
+        <div class="legal-related-grid">
+          {% for page_key, page_title, endpoint in related_pages %}
+            <a class="legal-related-card" href="{{ url_for(endpoint) }}">
+              <span>Legal document</span>
+              {{ page_title }} <span aria-hidden="true">→</span>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+
+    <footer class="legal-footer">
+      <div class="legal-footer-inner">
+        <a class="legal-footer-brand" href="/">© 2026 Somo LeadFinder</a>
+        <nav class="legal-links" aria-label="Legal navigation">
+          {% for page_key, page_title, endpoint in all_legal_pages %}
+            <a
+              href="{{ url_for(endpoint) }}"
+              {% if endpoint == legal_page.endpoint %}aria-current="page"{% endif %}
+            >{{ page_title }}</a>
+          {% endfor %}
+        </nav>
+      </div>
+    </footer>
+
+    <script>
+      (() => {
+        const sections = document.querySelectorAll(".legal-content section[id]");
+        const links = document.querySelectorAll(".legal-toc a");
+        if (!sections.length) return;
+
+        const setActiveSection = (sectionId) => {
+          links.forEach((link) => {
+            if (link.hash === `#${sectionId}`) {
+              link.setAttribute("aria-current", "location");
+            } else {
+              link.removeAttribute("aria-current");
+            }
+          });
+        };
+
+        links.forEach((link) => {
+          link.addEventListener("click", () => {
+            setActiveSection(link.hash.slice(1));
+          });
+        });
+
+        if (location.hash) {
+          setActiveSection(decodeURIComponent(location.hash.slice(1)));
+        } else {
+          setActiveSection(sections[0].id);
+        }
+
+        if (!("IntersectionObserver" in window)) return;
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            const visible = entries
+              .filter((entry) => entry.isIntersecting)
+              .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+            if (!visible.length) return;
+
+            setActiveSection(visible[0].target.id);
+          },
+          { rootMargin: "-12% 0px -72% 0px" }
+        );
+
+        sections.forEach((section) => observer.observe(section));
+      })();
+    </script>
+  </body>
+</html>

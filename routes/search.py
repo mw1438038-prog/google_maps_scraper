@@ -1,13 +1,14 @@
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import uuid
+from concurrent.futures import ThreadPoolExecutor
 
 from flask import Blueprint, request, jsonify, current_app
 
-from services.google_places import GooglePlacesService
+from services.map_provider_clients import search_google_places
+from services.monitoring import mark_component_healthy_in_session, record_error
 from services.website_scraper import WebsiteScraper
 
 from routes.pagination import paginate_results
-from routes.search_cache import save_search, delete_search, get_search
 
 from models.search_history import SearchHistory
 
@@ -17,6 +18,7 @@ from routes.usage import (
     consume_search,
     get_usage,
 )
+from services.google_places import GooglePlacesError, GooglePlacesService
 
 
 # =====================================================
@@ -24,103 +26,46 @@ from routes.usage import (
 # =====================================================
 
 search_bp = Blueprint("search", __name__)
+WEBSITE_SCRAPE_WORKERS = 10
 
 
-# =====================================================
-# WEBSITE SCRAPER
-# =====================================================
-
-website_scraper = WebsiteScraper(timeout=5)
-
-
-# =====================================================
-# SCRAPE ONE WEBSITE
-# =====================================================
-
-def scrape_one_website(place):
-    place["email"] = ""
-    place["facebook"] = ""
-    place["instagram"] = ""
-    place["linkedin"] = ""
-    place["twitter"] = ""
-    place["other_social"] = ""
-
-    website = place.get("website", "")
-
-    if not website:
-        return place
-
+def _scrape_result_website(scraper, result, logger):
     try:
-        scraped_data = website_scraper.scrape(website)
-
-        if scraped_data:
-            place.update(scraped_data)
-
+        return scraper.scrape(result.get("website", ""))
     except Exception:
-        current_app.logger.exception(
-            "Website scraping failed for a result."
+        logger.exception(
+            "Website enrichment failed; returning the result without it.",
+            extra={"category": "website_scraper"},
+        )
+        return {
+            "email": "",
+            "facebook": "",
+            "instagram": "",
+            "linkedin": "",
+            "twitter": "",
+            "other_social": "",
+        }
+
+
+def enrich_results_with_website_data(results, logger):
+    if not results:
+        return
+
+    scraper = WebsiteScraper(timeout=3)
+    max_workers = min(WEBSITE_SCRAPE_WORKERS, len(results))
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        scraped_results = executor.map(
+            lambda result: _scrape_result_website(
+                scraper,
+                result,
+                logger,
+            ),
+            results,
         )
 
-    return place
-
-
-# =====================================================
-# SCRAPE ALL WEBSITES
-# =====================================================
-
-def scrape_results(results):
-    places_with_websites = [
-        place for place in results
-        if place.get("website", "")
-    ]
-
-    places_without_websites = [
-        place for place in results
-        if not place.get("website", "")
-    ]
-
-    for place in places_without_websites:
-        place["email"] = ""
-        place["facebook"] = ""
-        place["instagram"] = ""
-        place["linkedin"] = ""
-        place["twitter"] = ""
-        place["other_social"] = ""
-
-    scraped_results = []
-
-    if places_with_websites:
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            futures = [
-                executor.submit(scrape_one_website, place)
-                for place in places_with_websites
-            ]
-
-            for future in as_completed(futures):
-                try:
-                    scraped_results.append(future.result())
-                except Exception:
-                    current_app.logger.exception(
-                        "A website scraping task failed."
-                    )
-
-    result_map = {
-        place.get("id"): place
-        for place in scraped_results
-        if place.get("id")
-    }
-
-    final_results = []
-
-    for place in results:
-        place_id = place.get("id")
-
-        if place_id and place_id in result_map:
-            final_results.append(result_map[place_id])
-        else:
-            final_results.append(place)
-
-    return final_results
+        for result, scraped_data in zip(results, scraped_results):
+            result.update(scraped_data)
 
 
 # =====================================================
@@ -161,7 +106,8 @@ def get_limit_message(user):
 
     if plan == "free":
         return (
-            "Your 10 Free searches have been used. "
+            "Your 10 Free searches for this month have been used. "
+            "They reset at the start of next month. "
             "Please upgrade to Pro or Business to continue."
         )
 
@@ -173,8 +119,8 @@ def get_limit_message(user):
 
     if plan == "business":
         return (
-            "You have reached your monthly Business search limit. "
-            "Please wait for your next billing cycle."
+            "Your Business subscription is not active. "
+            "Please check your subscription to continue searching."
         )
 
     return "You have reached your search limit."
@@ -226,50 +172,29 @@ def search():
             "message": "Keyword is required.",
         }), 400
 
-    search_id = None
-
     try:
-        api_key = current_app.config.get("GOOGLE_MAPS_API_KEY")
-
-        if not api_key:
-            current_app.logger.error(
-                "Google Maps API key is not configured."
-            )
-            return jsonify({
-                "success": False,
-                "message": "Google Maps API is not configured.",
-            }), 503
-
-        google_places = GooglePlacesService(api_key)
-
         user_plan = (user.plan or "free").lower().strip()
-
-        # Fetch all results Google makes available.
-        # No Free/Pro/Business result slicing here.
-        search_data = google_places.search_places(
+        search_data = search_google_places(
             country=country,
             city=city,
             keyword=keyword,
             plan=user_plan,
         )
-
         results = search_data.get("results", [])
 
-        current_app.logger.info(
-            "Google Places returned %s results.",
-            len(results),
-        )
+        if not search_data["successful_providers"]:
+            return jsonify({
+                "success": False,
+                "message": (
+                    "Google Maps search is unavailable. Check its "
+                    "configuration and try again."
+                ),
+                "provider_statuses": search_data["statuses"],
+            }), 503
 
-        # Scrape all returned results; no plan result limit.
-        final_results = scrape_results(results)
+        enrich_results_with_website_data(results, current_app.logger)
 
-        # Save the complete result set in cache.
-        search_id = save_search(
-            results=final_results,
-            country=country,
-            city=city,
-            keyword=keyword,
-        )
+        search_id = uuid.uuid4().hex
 
         history_record = SearchHistory(
             search_id=search_id,
@@ -277,23 +202,37 @@ def search():
             country=country,
             city=city,
             keyword=keyword,
-            result_count=len(final_results),
-            results=[],
+            result_count=len(results),
+            results=[
+                {
+                    "source": result.get("source", ""),
+                    "google_place_id": str(
+                        result.get("provider_ids", {}).get("google_maps", "")
+                    ),
+                }
+                for result in results
+            ],
         )
 
-        # Consume one search credit for a successful new search.
-        if not consume_search(user, history_record):
-            delete_search(search_id)
+        if search_data["statuses"]["Google Maps"]["status"] == "Success":
+            mark_component_healthy_in_session(
+                "google_places",
+                "observed_places_search",
+            )
 
+        # A combined provider search is one user search and one quota debit.
+        if not consume_search(user, history_record):
             return jsonify({
                 "success": False,
                 "message": get_limit_message(user),
                 "usage": get_usage(user),
+                "provider_statuses": search_data["statuses"],
             }), 403
 
-        pagination_data = get_page_results(
-            results=final_results,
+        pagination = paginate_results(
+            results,
             page=1,
+            per_page=15,
         )
 
         usage = get_usage(user)
@@ -301,37 +240,102 @@ def search():
         return jsonify({
             "success": True,
             "search_id": search_id,
-            "count": len(pagination_data["results"]),
-            "results": pagination_data["results"],
-            "pagination": pagination_data["pagination"],
+            "count": len(results),
+            "results": results,
+            "pagination": pagination["pagination"],
             "search_query": search_data.get("search_query", ""),
+            "provider_statuses": search_data["statuses"],
             "usage": usage,
         })
 
-    except Exception:
+    except Exception as error:
+        record_error(
+            "search",
+            "ERROR",
+            "Combined maps search failed.",
+            exception=error,
+            status=500,
+        )
         current_app.logger.exception("Search failed.")
-
-        if search_id:
-            try:
-                delete_search(search_id)
-            except Exception:
-                current_app.logger.exception(
-                    "Could not delete failed search cache."
-                )
 
         return jsonify({
             "success": False,
             "message": (
-                "Search failed. Please check your settings "
-                "and try again."
+                "Search could not be completed. Please try again."
             ),
         }), 500
 
 
+@search_bp.route("/api/google/place-details", methods=["POST"])
+def google_place_details():
+    user = get_current_user()
+    if not user:
+        return jsonify({
+            "success": False,
+            "message": "Please log in to view place details.",
+        }), 401
+
+    data = request.get_json(silent=True) or {}
+    place_id = str(data.get("place_id") or "").strip()
+    if (
+        not place_id
+        or len(place_id) > 255
+        or any(ord(character) < 32 or ord(character) == 127 for character in place_id)
+    ):
+        return jsonify({
+            "success": False,
+            "message": "A valid Google Place ID is required.",
+        }), 400
+
+    user_history = SearchHistory.query.filter_by(user_id=user.id).all()
+    if not any(
+        isinstance(saved_result, dict)
+        and saved_result.get("google_place_id") == place_id
+        for history in user_history
+        for saved_result in (history.results or [])
+    ):
+        return jsonify({
+            "success": False,
+            "message": "Place details are available only for your saved searches.",
+        }), 404
+
+    api_key = current_app.config.get("GOOGLE_MAPS_API_KEY")
+    if not api_key or not current_app.config.get("GOOGLE_MAPS_ENABLED", True):
+        return jsonify({
+            "success": False,
+            "message": "Google Maps details are not configured.",
+        }), 503
+
+    try:
+        place = GooglePlacesService(api_key).get_place_details(place_id)
+    except GooglePlacesError:
+        return jsonify({
+            "success": False,
+            "message": "Google Maps could not retrieve these details right now.",
+        }), 502
+
+    display_name = place.get("displayName")
+    return jsonify({
+        "success": True,
+        "source": "Google Maps",
+        "name": (
+            display_name.get("text", "")
+            if isinstance(display_name, dict)
+            else ""
+        ),
+        "address": place.get("formattedAddress", ""),
+        "phone": place.get("nationalPhoneNumber", ""),
+        "website": place.get("websiteUri", ""),
+        "rating": place.get("rating", ""),
+        "reviews": place.get("userRatingCount", ""),
+        "maps_url": place.get("googleMapsUri", ""),
+        "attribution": "Google Maps",
+    })
+
+
 # =====================================================
-# PAGINATION PAGE
-# Uses cached results.
-# Does not call Google API or consume a search credit.
+# RETIRED PAGINATION ENDPOINT
+# Results are paginated in the browser from the current search response.
 # =====================================================
 
 @search_bp.route("/api/search/page", methods=["POST"])
@@ -344,60 +348,10 @@ def search_page():
             "message": "Please login before viewing search results.",
         }), 401
 
-    data = request.get_json(silent=True) or {}
-
-    search_id = str(data.get("search_id", "")).strip()
-
-    try:
-        page = int(data.get("page", 1))
-    except (TypeError, ValueError):
-        page = 1
-
-    page = max(page, 1)
-
-    if not search_id:
-        return jsonify({
-            "success": False,
-            "message": "Search session has expired. Please search again.",
-        }), 400
-
-    search_data = get_search(search_id)
-
-    if not search_data:
-        return jsonify({
-            "success": False,
-            "message": "Search session has expired. Please search again.",
-        }), 404
-
-    # Prevent users from accessing another user's cached search.
-    # The cache record must contain the owner ID for this check.
-    owner_id = search_data.get("user_id")
-
-    if owner_id is not None and str(owner_id) != str(user.id):
-        return jsonify({
-            "success": False,
-            "message": "You do not have access to these search results.",
-        }), 403
-
-    results = search_data.get("results", [])
-
-    pagination_data = get_page_results(
-        results=results,
-        page=page,
-    )
-
-    pagination = pagination_data["pagination"]
-    page_results = pagination_data["results"]
-
     return jsonify({
-        "success": True,
-        "search_id": search_id,
-        "count": len(page_results),
-        "results": page_results,
-        "pagination": pagination,
-        "search_query": (
-            f"{search_data.get('keyword', '')} "
-            f"in {search_data.get('city', '')}, "
-            f"{search_data.get('country', '')}"
+        "success": False,
+        "message": (
+            "Search result pages are held only in the current browser session. "
+            "Run a new search after reloading the page."
         ),
-    })
+    }), 410

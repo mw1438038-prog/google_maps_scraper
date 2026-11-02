@@ -6,11 +6,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Secure Checkout - Google Maps Lead Finder</title>
+    <title>Secure Checkout - Somo LeadFinder</title>
 
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='checkout.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='legal.css') }}"
     />
   </head>
 
@@ -56,7 +60,10 @@
             <ul class="feature-list">
               <li>
                 <span class="check">✓</span>
-                <span>{{ plan_data.searches }} searches per billing period</span>
+                <span>
+                  {% if plan_data.searches is none %}Unlimited searches
+                  {% else %}{{ "{:,}".format(plan_data.searches) }} searches per month{% endif %}
+                </span>
               </li>
             
               <li>
@@ -132,5 +139,8 @@
     </main>
 
     <script src="{{ url_for('static', filename='checkout.js') }}"></script>
+    <footer class="checkout-footer">
+      {% include "_legal_footer_links.html" %}
+    </footer>
   </body>
 </html>

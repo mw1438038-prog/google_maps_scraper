@@ -160,6 +160,10 @@ function renderCountries(searchValue = "") {
 // =====================================================
 
 function selectCountry(country) {
+  if (country !== selectedCountry) {
+    invalidateCurrentSearch();
+  }
+
   selectedCountry = country;
 
   selectedCity = "";
@@ -290,6 +294,10 @@ function renderCities(searchValue = "") {
 // =====================================================
 
 function selectCity(city) {
+  if (city !== selectedCity) {
+    invalidateCurrentSearch();
+  }
+
   selectedCity = city;
 
   cityText.textContent = city;
@@ -418,9 +426,9 @@ function updateUsageDisplay(usage) {
 
   const used = Number(usage.used || 0);
 
+  const isUnlimited = plan === "business" && usage.limit === null;
   const limit = Number(usage.limit || 0);
-
-  const remaining = Number(usage.remaining || 0);
+  const remaining = isUnlimited ? null : Number(usage.remaining || 0);
 
   // ===================================================
   // ELEMENTS
@@ -497,7 +505,9 @@ function updateUsageDisplay(usage) {
   // PLAN DESCRIPTION
   // ===================================================
 
-  if (remaining <= 0) {
+  if (isUnlimited) {
+    planDescriptionElement.textContent = "Unlimited searches";
+  } else if (remaining <= 0) {
     planDescriptionElement.textContent = "Monthly search limit reached";
   } else {
     planDescriptionElement.textContent = `${used} of ${limit} searches used`;
@@ -507,13 +517,13 @@ function updateUsageDisplay(usage) {
   // REMAINING SEARCHES
   // ===================================================
 
-  usageRemaining.textContent = remaining;
+  usageRemaining.textContent = isUnlimited ? "Unlimited" : remaining;
 
   // ===================================================
   // LIMIT REACHED
   // ===================================================
 
-  if (remaining <= 0) {
+  if (!isUnlimited && remaining <= 0) {
     badge.classList.add("usage-limit-reached");
   }
 }
@@ -607,6 +617,8 @@ async function searchPlaces() {
 
   excelButton.disabled = true;
 
+  const searchVersion = beginSearchRequest();
+
   if (typeof resetPagination === "function") {
     resetPagination();
   }
@@ -696,6 +708,10 @@ async function searchPlaces() {
 
     const data = await response.json();
 
+    if (!isCurrentSearchRequest(searchVersion)) {
+      return;
+    }
+
     if (!data.success) {
       if (data.usage) {
         updateUsageDisplay(data.usage);
@@ -729,37 +745,6 @@ async function searchPlaces() {
     currentResults = Array.isArray(data.results) ? data.results : [];
 
     // =============================================
-    // PAGINATION DATA
-    // =============================================
-
-    const pagination = data.pagination || {};
-
-    const current = Number(pagination.page || 1);
-
-    const backendTotal = Number(pagination.total || 0);
-
-    const backendTotalPages = Number(pagination.total_pages || 0);
-
-    const total = backendTotal > 0 ? backendTotal : currentResults.length;
-
-    const totalPages =
-      backendTotalPages > 0
-        ? backendTotalPages
-        : Math.max(1, Math.ceil(total / 15));
-
-    // =============================================
-    // DISPLAY RESULTS
-    // =============================================
-
-    displayResults(currentResults, current);
-
-    // =============================================
-    // RESULT COUNT
-    // =============================================
-
-    resultCount.textContent = `${total} results`;
-
-    // =============================================
     // EXPORT BUTTONS
     // =============================================
 
@@ -773,29 +758,22 @@ async function searchPlaces() {
       excelButton.disabled = true;
     }
 
-    // =============================================
-    // STATUS
-    // =============================================
-
-    status.className = "status success";
-
-    status.textContent = `Showing page ${current} of ${totalPages}. ${total} businesses found.`;
-
-    // =============================================
-    // UPDATE PAGINATION
-    // =============================================
-
-    updateBackendPagination(pagination);
+    renderSearchPage(1);
   } catch (error) {
+    if (!isCurrentSearchRequest(searchVersion)) {
+      return;
+    }
+
     console.error("Search Error:", error);
 
     status.className = "status error";
 
     status.textContent = error.message || "Search failed.";
   } finally {
-    button.disabled = false;
-
-    button.textContent = "🔍 Search Google Maps";
+    if (isCurrentSearchRequest(searchVersion)) {
+      button.disabled = false;
+      button.textContent = "🔍 Search Google Maps";
+    }
   }
 }
 
@@ -1202,6 +1180,8 @@ document
 // =====================================================
 
 document.addEventListener("DOMContentLoaded", function () {
+  clearSearchResults();
+
   loadCountries();
 
   loadUsage();

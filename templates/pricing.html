@@ -4,8 +4,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='legal.css') }}">
 
-<title>Choose Your Plan - Lead Finder</title>
+<title>Choose Your Plan - Somo LeadFinder</title>
 
 <style>
 * {
@@ -685,7 +686,7 @@ body {
 
             <div class="search-limit">
                 <span class="search-icon">⌕</span>
-                <strong>10 Searches</strong>
+                <strong>10 Searches / Month</strong>
             </div>
 
             <h3 class="feature-heading">Included Features</h3>
@@ -693,6 +694,7 @@ body {
             <ul class="features">
                 <li><span class="check">✓</span><span>Business Search</span></li>
                 <li><span class="check">✓</span><span>Business Details</span></li>
+                <li><span class="check">✓</span><span>Up to 20 results per search</span></li>
                 <li class="unavailable"><span class="check">×</span><span>Advanced Lead Search</span></li>
                 <li class="unavailable"><span class="check">×</span><span>CSV / Excel Export</span></li>
                 <li class="unavailable"><span class="check">×</span><span>Priority Support</span></li>
@@ -707,12 +709,12 @@ body {
         <article class="plan-card">
             <h2 class="plan-name"><span>Pro</span></h2>
 
-            <div class="price">$9</div>
+            <div class="price">$1</div>
             <div class="period">Per Month</div>
 
             <div class="search-limit">
                 <span class="search-icon">⌕</span>
-                <strong>500 Searches / Month</strong>
+                <strong>1,000 Searches / Month</strong>
             </div>
 
             <h3 class="feature-heading">Pro Features</h3>
@@ -720,6 +722,7 @@ body {
             <ul class="features">
                 <li><span class="check">✓</span><span>Business Search</span></li>
                 <li><span class="check">✓</span><span>Business Details</span></li>
+                <li><span class="check">✓</span><span>All matching results fetched from Google Places*</span></li>
                 <li><span class="check">✓</span><span>Advanced Lead Search</span></li>
                 <li><span class="check">✓</span><span>CSV / Excel Export</span></li>
                 <li><span class="check">✓</span><span>Email Support</span></li>
@@ -739,7 +742,7 @@ body {
 
             <div class="search-limit">
                 <span class="search-icon">⌕</span>
-                <strong>1,000 Searches / Month</strong>
+                <strong>Unlimited Searches</strong>
             </div>
 
             <h3 class="feature-heading">Business Features</h3>
@@ -747,6 +750,7 @@ body {
             <ul class="features">
                 <li><span class="check">✓</span><span>Business Search</span></li>
                 <li><span class="check">✓</span><span>Business Details</span></li>
+                <li><span class="check">✓</span><span>All matching results fetched from Google Places*</span></li>
                 <li><span class="check">✓</span><span>Advanced Lead Search</span></li>
                 <li><span class="check">✓</span><span>CSV / Excel Export</span></li>
                 <li><span class="check">✓</span><span>Priority Support</span></li>
@@ -758,6 +762,10 @@ body {
         </article>
 
     </main>
+
+    <p class="results-limit-note">
+        *Results depend on Google Places availability and pagination limits.
+    </p>
 
     <section class="comparison">
         <button class="comparison-toggle" onclick="toggleComparison()">
@@ -779,8 +787,14 @@ body {
                 <tr>
                     <td>Monthly Searches</td>
                     <td>10</td>
-                    <td>500</td>
                     <td>1,000</td>
+                    <td>Unlimited</td>
+                </tr>
+                <tr>
+                    <td>Results per Search</td>
+                    <td>Up to 20</td>
+                    <td>All fetched*</td>
+                    <td>All fetched*</td>
                 </tr>
                 <tr>
                     <td>Business Search</td>
@@ -817,7 +831,8 @@ body {
     </section>
 
     <footer class="footer">
-        Lead Finder · Simple monthly pricing for your business
+        Somo LeadFinder · Simple monthly pricing for your business
+        {% include "_legal_footer_links.html" %}
     </footer>
 
 </div>

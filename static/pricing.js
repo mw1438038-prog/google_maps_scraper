@@ -36,7 +36,6 @@ async function loadCurrentPlan() {
     updatePlanUI(
       data.current_plan,
       data.subscription_status,
-      data.free_trial_used,
     );
   } catch (error) {
     console.error("Plan Error:", error);
@@ -104,7 +103,7 @@ async function selectPlan(plan, button) {
         throw new Error(data.message || "Unable to update plan.");
       }
 
-      updatePlanUI("free", "inactive", data.free_trial_used);
+      updatePlanUI("free", "inactive");
 
       showStatus(data.message, "success");
 
@@ -127,16 +126,15 @@ async function selectPlan(plan, button) {
 // UPDATE PLAN UI
 // =====================================================
 
-function updatePlanUI(currentPlan, subscriptionStatus, freeTrialUsed) {
+function updatePlanUI(currentPlan, subscriptionStatus) {
   currentPlan = String(currentPlan || "free").toLowerCase();
 
   subscriptionStatus = String(subscriptionStatus || "inactive").toLowerCase();
 
-  freeTrialUsed = Boolean(freeTrialUsed);
   activePlan = currentPlan;
   activeSubscriptionStatus = subscriptionStatus;
 
-  const cards = document.querySelectorAll(".pricing-card");
+  const cards = document.querySelectorAll(".plan-card");
 
   cards.forEach(function (card) {
     const plan = card.dataset.plan;
@@ -158,7 +156,7 @@ function updatePlanUI(currentPlan, subscriptionStatus, freeTrialUsed) {
     if (plan === "free") {
       if (currentPlan === "free") {
         card.classList.add("selected");
-        button.textContent = freeTrialUsed ? "Free Trial Used" : "Current Plan";
+        button.textContent = "Current Plan";
         button.disabled = true;
         return;
       }

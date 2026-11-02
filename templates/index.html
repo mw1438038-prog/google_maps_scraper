@@ -5,7 +5,8 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Google Maps Lead Finder</title>
+    <meta name="description" content="Search businesses across connected map providers with Somo LeadFinder." />
+    <title>Somo LeadFinder</title>
 
     <link
       rel="stylesheet"
@@ -25,9 +26,9 @@
       <header class="hero">
         <div class="hero-top">
           <div class="hero-content">
-            <h1>Google Maps Lead Finder</h1>
+            <h1>Somo LeadFinder</h1>
 
-            <p>Find businesses by country, city and keyword</p>
+            <p>Find businesses across available map providers by country, city and keyword</p>
           </div>
 
           <!-- =================================================
@@ -174,7 +175,7 @@
         ================================================== -->
 
         <button id="searchButton" onclick="searchPlaces()">
-          🔍 Search Google Maps
+          🔍 Search Maps
         </button>
       </section>
 
@@ -199,6 +200,11 @@
 
             <span id="resultCount"> 0 results </span>
           </div>
+          <p class="provider-attribution">
+            Provider attribution is shown for every result. Google Maps results
+            link only to Google Maps; result details are held in this browser
+            session and are not saved by Somo LeadFinder.
+          </p>
 
           <!-- =================================================
                  EXPORT BUTTONS
@@ -260,6 +266,8 @@
                 <th>Reviews</th>
 
                 <th>Google Maps</th>
+
+                <th>Source</th>
               </tr>
             </thead>
 
@@ -268,7 +276,7 @@
         </div>
 
         <!-- =================================================
-             BACKEND PAGINATION
+             CLIENT-SIDE RESULT PAGINATION
         ================================================== -->
 
         <div class="pagination-container" id="paginationContainer">
