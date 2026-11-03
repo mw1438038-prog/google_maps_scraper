@@ -19,7 +19,9 @@ from services.logging_config import configure_logging
 from models.user import User
 from models.exported_lead import ExportedLead
 from models.freemius_webhook_event import FreemiusWebhookEvent
+from models.error_event import ErrorEvent
 from models.request_metric import RequestMetric
+from models.component_health import ComponentHealth
 
 # Blueprints
 from routes.locations import locations_bp
@@ -48,14 +50,15 @@ def create_app():
         initialize_database(app)
         app.logger.info("Database schema check completed successfully.")
 
-    except Exception:
-        # Log the original database initialization error.
-        # Do not call db.session.rollback() outside app context.
+    except Exception as error:
+        # Preserve the original failure; startup has no active session to roll back.
         app.logger.exception(
-            "Database initialization or schema check failed.",
+            "Database initialization or schema check failed (%s): %s",
+            type(error).__name__,
+            error,
             extra={
                 "category": "neon",
-                "monitoring_exception_type": "DatabaseStartupError",
+                "monitoring_exception_type": type(error).__name__,
             },
         )
         raise

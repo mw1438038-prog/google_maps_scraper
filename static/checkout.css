@@ -47,6 +47,24 @@ body {
   margin-bottom: 18px;
 }
 
+.checkout-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 14px;
+  color: #1b2c44;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.checkout-brand img {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  object-fit: contain;
+}
+
 .secure-badge {
   display: inline-flex;
 

@@ -2,7 +2,7 @@
 
 ## Intent
 
-Harden the existing Flask Google Maps Lead Finder using the current official Places API documentation, preserve authentication, Google OAuth, plans, Freemius checkout, and the general search/dashboard experience, and make unsafe or unverified Places-data handling explicit. The user selected the strict policy-first direction: only Place IDs may be persisted as Google Places data; Places-derived fields must not be saved in My Leads or exports; website scraping from Google-provided website URLs stays paused until that use is confirmed as permitted.
+Harden the existing Somo LeadFinder Flask application using the current official Places API documentation, preserve authentication, Google OAuth, plans, Freemius checkout, and the general search/dashboard experience, and make unsafe or unverified Places-data handling explicit. The strict policy-first data rules remain: only Place IDs may be persisted as Google Places data, and Places-derived fields must not be saved in My Leads or exports. On 2026-11-02, the owner confirmed that scraping business websites returned by Google Places for publicly available contact/social links was reviewed and approved under applicable terms.
 
 This is a code-level design, not a claim of legal or live-production approval. Google Cloud's actual quota, account billing region, current SKU prices, deployed schema, published Terms/Privacy text, and worker-host availability remain external verification items.
 
@@ -16,7 +16,7 @@ This is a code-level design, not a claim of legal or live-production approval. G
 - Keep ownership checks on all search, status, pagination, and export paths. Generate exports from server-owned records and include only Place IDs and user-entered search metadata.
 - Prevent duplicate initial-search or pagination submissions from triggering duplicate Text Search requests by using distinct idempotency keys for the initial search and each logical page request.
 - Add attribution near displayed Places content, make the Google content visually distinct, and provide ranking-factor disclosure. Do not fabricate legal Terms or Privacy text; report their required public publication as a manual release prerequisite.
-- Harden URL-fetching code against SSRF even while its use remains disabled.
+- Harden URL-fetching code against SSRF for the approved, request-scoped website enrichment.
 - Keep migrations manual and reviewable. Do not apply migrations or connect to production.
 
 ## Non-goals and constraints
@@ -25,13 +25,13 @@ This is a code-level design, not a claim of legal or live-production approval. G
 - No new database provider, Redis, external queue, or paid service.
 - No claim of 1,000-user capacity without representative load testing.
 - Do not persist full Places responses for a cache, export, or background job.
-- Do not enable website/social/email scraping from a `websiteUri` returned by Google until Google policy/terms applicability has been confirmed. This intentionally suspends those enrichment columns in new results.
+- Website enrichment may use Google Places `websiteUri` values following owner-confirmed policy review. Enrichment remains best-effort, request-scoped, bounded, and excluded from durable storage and exports.
 - Do not make a legal determination that exports or any particular use of `websiteUri` is permitted. Only Place IDs are included in generated exports under this design.
 - Existing production records may already contain Places data in `exported_leads`. Code will stop reading/writing those fields. A separately documented, manually applied cleanup is needed to remove legacy values; this implementation will not execute it.
 
 ## Approaches considered
 
-1. **Strict policy-first (selected):** durable Place IDs and app-owned query/status metadata only; on-demand Places data is transient; no Places fields in My Leads/exports; disable enrichment until confirmed. This best matches the requested storage rule, but materially reduces export/My Leads details and pauses email/social scraping.
+1. **Strict policy-first (selected):** durable Place IDs and app-owned query/status metadata only; on-demand Places data is transient; no Places fields in My Leads/exports; allow website enrichment after owner-confirmed policy review.
 2. **Preserve detailed lead exports:** keep saved phone/address/rating/website fields and exports, add attribution and a map. This preserves the existing product better but conflicts with the requested storage restriction and cannot be called compliant without written Google approval.
 3. **Rehydrate every display/export from Place IDs:** store IDs, then make Place Details calls to rebuild page fields. This avoids storing those fields but adds many billable API calls, complicates rate limiting, and still does not resolve whether exporting the rehydrated fields is allowed. Not selected.
 
@@ -40,7 +40,7 @@ This is a code-level design, not a claim of legal or live-production approval. G
 ### Places client and billing
 
 - Keep Places API (New) Text Search `POST https://places.googleapis.com/v1/places:searchText`.
-- Retain the required `X-Goog-FieldMask`; verify every requested field against the current Text Search field/SKU table before deciding the final mask. Remove fields used only by paused scraping or persistence. Keep any display/filter field only if the user experience still needs it.
+- Retain the required `X-Goog-FieldMask`; verify every requested field against the current Text Search field/SKU table before deciding the final mask. Keep fields only when needed for display or approved website enrichment.
 - Set `pageSize` to no more than 20 and make at most three Text Search page calls (60 results total). Follow `nextPageToken` sequentially and stop on missing/repeated tokens.
 - Keep Places payloads in request/response memory only as needed to render the current response. Do not cache them on the server, store them in Neon, local storage, or durable jobs. The client receives only the current page's data for immediate display; pagination state is held only in volatile client memory and signed POST cursor state.
 - Add `GOOGLE_PLACES_QPM_LIMIT` as an explicit runtime setting that must equal a manually verified Google Cloud per-project Places method quota. No default or fallback number is assumed. A Neon-backed atomic minute-window counter coordinates all Flask instances. If the setting is missing or invalid in any environment, the app does not send Google requests and returns service unavailable.
@@ -104,7 +104,7 @@ This is a code-level design, not a claim of legal or live-production approval. G
 - `routes/search.py`, `routes/search_cache.py`, `routes/pagination.py`, `routes/usage.py` — quota reservation, durable ID-only search state, ownership, and removal of scraping/cache behavior.
 - `models/search_history.py`, `models/exported_lead.py`, and new quota reservation/search-result model modules — durable metadata and Place IDs only.
 - `routes/export.py`, `routes/profile.py` — owned Place-ID-only exports and My Leads; stop exposing legacy Places values.
-- `services/website_scraper.py` — SSRF and bounded-fetch hardening; invocation remains disabled.
+- `services/website_scraper.py` — SSRF and bounded-fetch hardening for approved, request-scoped enrichment.
 - `templates/index.html`, `templates/profile.html`, `templates/account.html`, `templates/home.html`, `static/app.js`, `static/pagination.js`, `static/profile.js`, `static/profile.css`, and possibly `app.py` — attribution, status, removal of enrichment display, CSRF, and logout UI.
 - `routes/auth.py`, `routes/payment.py`, `app.py` — verified OAuth email, CSRF/security headers and session-safe routes; Freemius webhooks remain CSRF-exempt only because provider signature validation is their authentication.
 - `migrations/20261031_google_backend_compliance.sql` — manual schema additions only. Any historical-data cleanup must be a separate optional SQL file with explicit backup/review instructions, never part of deployment/startup.

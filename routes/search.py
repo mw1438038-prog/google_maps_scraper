@@ -5,7 +5,10 @@ from concurrent.futures import ThreadPoolExecutor
 from flask import Blueprint, request, jsonify, current_app
 
 from services.map_provider_clients import search_google_places
-from services.monitoring import mark_component_healthy_in_session, record_error
+from services.monitoring import (
+    mark_component_healthy_in_session,
+    record_error,
+)
 from services.website_scraper import WebsiteScraper
 
 from routes.pagination import paginate_results
@@ -33,9 +36,10 @@ def _scrape_result_website(scraper, result, logger):
     try:
         return scraper.scrape(result.get("website", ""))
     except Exception:
-        logger.exception(
+        logger.warning(
             "Website enrichment failed; returning the result without it.",
             extra={"category": "website_scraper"},
+            exc_info=False,
         )
         return {
             "email": "",

@@ -5,16 +5,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}" />
 
     <title>Secure Checkout - Somo LeadFinder</title>
 
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='checkout.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='legal.css') }}"
     />
   </head>
 
@@ -28,6 +25,10 @@
 
     <main class="checkout-page">
       <header class="checkout-header">
+        <a class="checkout-brand" href="{{ url_for('home') }}">
+          <img src="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}" alt="" />
+          <span>Somo LeadFinder</span>
+        </a>
         <div class="secure-badge">
           <span aria-hidden="true">🔒</span>
           Secure Checkout
@@ -139,8 +140,5 @@
     </main>
 
     <script src="{{ url_for('static', filename='checkout.js') }}"></script>
-    <footer class="checkout-footer">
-      {% include "_legal_footer_links.html" %}
-    </footer>
   </body>
 </html>

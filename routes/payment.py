@@ -16,7 +16,10 @@ from services.quotas import (
     expire_subscription_to_free,
     refresh_free_quota,
 )
-from services.monitoring import mark_component_healthy_in_session, record_error
+from services.monitoring import (
+    mark_component_healthy_in_session,
+    record_error,
+)
 
 
 payment_bp = Blueprint("payment", __name__)
@@ -59,6 +62,19 @@ def _parse_datetime(value):
             return None
 
     return None
+
+
+def _parse_bool(value):
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, (int, float)):
+        return value != 0
+
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+
+    return False
 
 
 def _unwrap(data, key):
@@ -291,12 +307,19 @@ def _sync_license(license_id):
         license_data.get("expiration")
     )
 
-    is_canceled = bool(
+    is_canceled = _parse_bool(
         license_data.get(
             "is_cancelled",
             license_data.get("is_canceled", False),
         )
     )
+
+    if expires_at is None:
+        current_app.logger.warning(
+            "Freemius license %s has no valid expiration.",
+            actual_license_id,
+        )
+        return False
 
     now = _utc_now()
 
@@ -337,17 +360,15 @@ def _sync_license(license_id):
         )
         return True
 
-    is_expired = (
-        expires_at is not None
-        and expires_at <= now
-    )
+    is_expired = expires_at <= now
 
-    # Do not grant paid access to canceled or expired licenses.
-    if is_canceled or is_expired:
+    # Cancellation stops renewal; paid access remains until Freemius' actual
+    # license expiration. Expired licenses are downgraded immediately.
+    if is_expired:
         expire_subscription_to_free(
             user,
             now,
-            status="canceled" if is_canceled else "expired",
+            status="expired",
             commit=False,
         )
         user.subscription_expires_at = expires_at
@@ -360,14 +381,6 @@ def _sync_license(license_id):
         )
 
         return True
-
-    # Expiration must be known before paid access is granted.
-    if expires_at is None:
-        current_app.logger.warning(
-            "Freemius license %s has no valid expiration.",
-            actual_license_id,
-        )
-        return False
 
     plan_changed = old_plan != plan
     new_subscription_period = (
@@ -434,6 +447,12 @@ def _sync_license(license_id):
         actual_license_id,
         user.id,
     )
+    if is_canceled:
+        current_app.logger.info(
+            "Freemius license %s will retain paid access through its "
+            "current expiration date.",
+            actual_license_id,
+        )
 
     return True
 

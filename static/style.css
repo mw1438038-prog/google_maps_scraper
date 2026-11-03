@@ -1527,6 +1527,19 @@ body.home-page::after {
   flex: 1;
 }
 
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-brand img {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
 .header-actions {
   display: flex;
   align-items: center;

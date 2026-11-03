@@ -18,9 +18,21 @@ class ErrorEvent(db.Model):
         db.Index("ix_error_events_status", "http_status"),
         db.Index("ix_error_events_fingerprint", "fingerprint"),
         db.Index("ix_error_events_request_id", "request_id"),
-        db.Index("ix_error_events_component_timestamp", "component", "event_timestamp"),
-        db.Index("ix_error_events_category_timestamp", "category", "event_timestamp"),
-        db.Index("ix_error_events_severity_timestamp", "severity", "event_timestamp"),
+        db.Index(
+            "ix_error_events_component_timestamp",
+            "component",
+            "event_timestamp",
+        ),
+        db.Index(
+            "ix_error_events_category_timestamp",
+            "category",
+            "event_timestamp",
+        ),
+        db.Index(
+            "ix_error_events_severity_timestamp",
+            "severity",
+            "event_timestamp",
+        ),
     )
 
     id = db.Column(db.Integer, primary_key=True)

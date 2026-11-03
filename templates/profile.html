@@ -6,12 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Your Somo LeadFinder dashboard.">
   <title>Somo LeadFinder Dashboard</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,500,0,0" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='profile.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='legal.css') }}">
 </head>
 
 <body>
@@ -19,10 +19,9 @@
 
   <aside class="sidebar">
     <a class="sidebar-brand" href="{{ url_for('profile.profile') }}">
-      <span class="brand-logo material-symbols-outlined">location_on</span>
+      <img class="brand-logo site-logo" src="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}" alt="">
       <span class="brand-text">
-        <strong>Google Maps</strong>
-        <span>Somo LeadFinder</span>
+        <strong>Somo LeadFinder</strong>
       </span>
     </a>
 
@@ -92,7 +91,7 @@
   <main class="main-content">
     <header class="top-header">
       <div class="mobile-brand">
-        <span class="brand-logo small material-symbols-outlined">location_on</span>
+        <img class="brand-logo small site-logo" src="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}" alt="">
         <strong>Somo LeadFinder</strong>
       </div>
 
@@ -503,7 +502,6 @@
     <footer class="dashboard-footer">
       <span>© 2026 Somo LeadFinder</span>
       <a href="{{ url_for('profile.section', view='help') }}">Help &amp; Support</a>
-      {% include "_legal_footer_links.html" %}
     </footer>
   </main>
 </div>

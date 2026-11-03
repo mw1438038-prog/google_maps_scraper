@@ -4,8 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="{{ url_for('static', filename='legal.css') }}">
-
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}">
 <title>Choose Your Plan - Somo LeadFinder</title>
 
 <style>
@@ -108,14 +107,10 @@ body {
 }
 
 .logo-icon {
-    background: var(--blue);
-    color: white;
     width: 40px;
     height: 40px;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    font-size: 22px;
+    border-radius: 10px;
+    object-fit: contain;
 }
 
 .nav-actions {
@@ -653,8 +648,8 @@ body {
 
     <header class="navbar">
         <a href="/" class="logo">
-            <span class="logo-icon">⌕</span>
-            <span>LEAD FINDER</span>
+            <img class="logo-icon" src="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}" alt="">
+            <span>Somo LeadFinder</span>
         </a>
 
         <nav class="nav-actions">
@@ -709,7 +704,7 @@ body {
         <article class="plan-card">
             <h2 class="plan-name"><span>Pro</span></h2>
 
-            <div class="price">$1</div>
+            <div class="price">$9</div>
             <div class="period">Per Month</div>
 
             <div class="search-limit">
@@ -832,7 +827,6 @@ body {
 
     <footer class="footer">
         Somo LeadFinder · Simple monthly pricing for your business
-        {% include "_legal_footer_links.html" %}
     </footer>
 
 </div>

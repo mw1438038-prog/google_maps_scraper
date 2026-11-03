@@ -9,6 +9,7 @@ from flask import (
 
 from extensions import db
 from models.user import User
+from routes.usage import check_subscription_expiry
 from services.plan_limits import PLAN_LIMITS
 from services.quotas import refresh_free_quota
 
@@ -30,7 +31,7 @@ PLAN_DETAILS = {
     "pro": {
         "name": "Pro",
         "searches": PLAN_LIMITS["pro"]["searches"],
-        "price": 1,
+        "price": 9,
         "billing": "monthly",
     },
     "business": {
@@ -79,6 +80,8 @@ def pricing():
 @plans_bp.route("/api/plans", methods=["GET"])
 def get_plans():
     user = get_current_user()
+    if user:
+        check_subscription_expiry(user)
 
     current_plan = "free"
     subscription_status = "inactive"

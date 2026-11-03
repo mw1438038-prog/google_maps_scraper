@@ -1,114 +1,359 @@
-{% extends "_legal_layout.html" %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Learn how Somo Leads collects, uses, stores, and protects your information."
+    />
+    <title>Privacy Policy - Somo Leads</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='legal.css') }}"
+    />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="{{ url_for('home') }}" aria-label="Somo Leads home">
+        <img
+          src="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}"
+          alt=""
+        />
+        <span>Somo <strong>Leads</strong></span>
+      </a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('leads') }}">Search</a>
+        <a href="{{ url_for('plans.pricing') }}">Pricing</a>
+        <a href="{{ url_for('profile.profile') }}">Dashboard</a>
+        <a href="{{ url_for('profile.account') }}">Account</a>
+      </nav>
+      <a class="header-cta" href="{{ url_for('auth.google_login') }}">
+        Get Started <span aria-hidden="true">→</span>
+      </a>
+    </header>
 
-{% block legal_content %}
-  <section id="information-we-receive">
-    <h2>Information we receive</h2>
-    <p>
-      This policy describes how <strong>[BUSINESS / LEGAL NAME]</strong>
-      (“we,” “us,” or “our”) handles information through Somo LeadFinder.
-      Replace the bracketed business details and contact information before
-      publication.
-    </p>
-    <p>
-      If you sign in with Google, Google OAuth supplies account identifiers
-      and profile information such as your name, email address, and profile
-      picture when provided. The application stores account information
-      needed to identify your user account, such as Google identity, email,
-      name, and profile image.
-    </p>
-    <p>
-      Search history can include the keyword, city, country, time, result
-      count, and export activity. For new searches, the application retains
-      source labels and Google Places Place IDs where available. Full provider
-      result details are returned for the active browser session and are not
-      saved in the application's new search-history records. My Leads stores
-      Google Place IDs and the related search metadata so that Google details
-      can be requested when you choose to view them. Current CSV and Excel
-      exports contain provider source labels, Google Place IDs, and the search
-      query rather than full provider details.
-    </p>
-    <p>
-      Older records created before these data-handling changes may contain
-      additional lead details. Those records are not automatically rewritten
-      or deleted by this update.
-    </p>
-  </section>
+    <main>
+      <section class="policy-hero" aria-labelledby="page-title">
+        <div class="hero-inner">
+          <div class="hero-copy">
+            <span class="eyebrow"><span aria-hidden="true">✓</span> Your Privacy Matters</span>
+            <h1 id="page-title">Privacy <span>Policy</span></h1>
+            <p>
+              At Somo Leads, we value your privacy and are committed to
+              protecting your personal information.
+            </p>
+            <div class="updated-date">
+              <span aria-hidden="true">▦</span>
+              Last Updated: November 2, 2026
+            </div>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <div class="shield-art"><span>♙</span></div>
+            <div class="map-art">
+              <span class="map-grid"></span>
+              <span class="map-pin">●</span>
+              <span class="map-search"></span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-  <section id="cookies-and-sessions">
-    <h2>Cookies and sessions</h2>
-    <p>
-      The application uses a browser session cookie to maintain sign-in and
-      service state. Your browser also temporarily holds search results in
-      memory for the active page, including while you move between result
-      pages. Reloading or closing that page clears that in-memory result set.
-    </p>
-  </section>
+      <div class="breadcrumb">
+        <a href="{{ url_for('home') }}">⌂ &nbsp;Home</a>
+        <span aria-hidden="true">›</span>
+        <span>Privacy Policy</span>
+      </div>
 
-  <section id="map-and-account-providers">
-    <h2>Map and account providers</h2>
-    <p>
-      Google OAuth and Google Places are used for sign-in and Google Maps
-      search when configured. Searches send the keyword and selected
-      location to Google Places. Google Places content is displayed
-      with Google attribution, and this application stores Google Place IDs
-      rather than retaining full Google Places content for new searches.
-    </p>
-    <p>
-      Freemius handles subscription checkout and payment processing. The
-      application receives subscription and transaction-related webhook
-      information needed to manage plan status; payment card details are
-      handled by the payment provider. The application may store provider
-      identifiers, plan, subscription status, and expiry/usage information
-      needed to administer account access; it does not need to store payment
-      card details.
-    </p>
-  </section>
+      <div class="policy-layout">
+        <aside class="policy-sidebar">
+          <nav class="toc" aria-label="Privacy policy contents">
+            <h2><span aria-hidden="true">☷</span> Table of Contents</h2>
+            <ol>
+              <li><a href="#introduction"><span>1</span> Introduction</a></li>
+              <li><a href="#information"><span>2</span> Information We Collect</a></li>
+              <li><a href="#use"><span>3</span> How We Use Your Information</a></li>
+              <li><a href="#google-login"><span>4</span> Google Login and Authentication</a></li>
+              <li><a href="#cookies"><span>5</span> Cookies and Sessions</a></li>
+              <li><a href="#third-parties"><span>6</span> Third-Party Services</a></li>
+              <li><a href="#retention"><span>7</span> Data Retention</a></li>
+              <li><a href="#subscriptions"><span>8</span> Subscriptions and Cancellations</a></li>
+              <li><a href="#security"><span>9</span> Data Security</a></li>
+              <li><a href="#rights"><span>10</span> User Rights and Account Information</a></li>
+              <li><a href="#children"><span>11</span> Children's Privacy</a></li>
+              <li><a href="#changes"><span>12</span> Changes to This Privacy Policy</a></li>
+              <li><a href="#contact"><span>13</span> Contact Information</a></li>
+            </ol>
+          </nav>
+          <section class="help-card" aria-label="Privacy support contact">
+            <span class="help-icon" aria-hidden="true">✉</span>
+            <div>
+              <strong>Need Help?</strong>
+              <span>Contact us at:</span>
+              <a href="mailto:hi@tybwork.com">hi@tybwork.com</a>
+            </div>
+          </section>
+        </aside>
 
-  <section id="storage-sharing-retention">
-    <h2>Storage, sharing, and retention</h2>
-    <p>
-      Account, usage, search-history, export metadata, subscription, and
-      operational records are stored in the application's configured
-      database. Search terms and locations are sent to Google Places to
-      perform searches. The application does not sell personal information.
-      Providers may process information under their own terms and privacy
-      notices.
-    </p>
-    <p>
-      Search history and saved Place IDs do not currently have an automatic
-      deletion schedule. Monitoring records have a 90-day retention target
-      and are subject to the application's cleanup process. Export files
-      downloaded to your device are outside the application's storage.
-    </p>
-  </section>
+        <article class="policy-card">
+          <section class="policy-section" id="introduction">
+            <span class="section-icon" aria-hidden="true">▤</span>
+            <div>
+              <h2><span>1.</span> Introduction</h2>
+              <p>
+                TYBWORK.LTD ("we", "our", or "us") operates Somo Leads, a
+                business lead generation platform that helps users discover
+                business information through Google Places services.
+              </p>
+              <p>
+                This Privacy Policy explains how we collect, use, store, and
+                protect information when you access or use our website and
+                services.
+              </p>
+              <p>By using Somo Leads, you acknowledge that you have read this Privacy Policy.</p>
+            </div>
+          </section>
 
-  <section id="security">
-    <h2>Security</h2>
-    <p>
-      The application uses authenticated sessions and access checks for
-      account features. No method of internet transmission or storage can be
-      described as completely secure; users should protect their account and
-      downloaded files.
-    </p>
-  </section>
+          <section class="policy-section" id="information">
+            <span class="section-icon" aria-hidden="true">♟</span>
+            <div>
+              <h2><span>2.</span> Information We Collect</h2>
+              <p>We may collect the following information:</p>
+              <ul class="check-list">
+                <li><strong>Account Information:</strong> Name received through Google Login, email address, Google account identifier, and profile picture, where provided and stored.</li>
+                <li><strong>Account and Subscription Information:</strong> Current subscription plan, subscription status and expiration date, payment provider references, and usage and search quota information.</li>
+                <li><strong>Search Information:</strong> Selected country and city, search keywords, search result counts, and Google Places identifiers associated with search results.</li>
+              </ul>
+            </div>
+          </section>
 
-  <section id="your-choices-and-requests">
-    <h2>Your choices and requests</h2>
-    <p>
-      You may stop using a connected provider by signing out or by disabling
-      that provider in the application configuration. To ask about access,
-      correction, or deletion of account-related information, contact
-      <strong>[PRIVACY / SUPPORT EMAIL]</strong>. Requests may require
-      account verification. The operator should review and respond to
-      requests under applicable law.
-    </p>
-    <p>
-      We may update this notice when the application or its providers change.
-      The updated date above indicates the most recent policy revision.
-    </p>
-    <p>
-      Operator: <strong>[BUSINESS / LEGAL NAME]</strong> ·
-      <strong>[WEBSITE URL]</strong>.
-    </p>
-  </section>
-{% endblock %}
+          <section class="policy-section" id="use">
+            <span class="section-icon" aria-hidden="true">⚙</span>
+            <div>
+              <h2><span>3.</span> How We Use Your Information</h2>
+              <p>We use collected information to:</p>
+              <ul class="check-list">
+                <li>Create and manage user accounts.</li>
+                <li>Authenticate users through Google Login.</li>
+                <li>Provide business search functionality and maintain search history.</li>
+                <li>Monitor usage and subscription limits and manage subscription access.</li>
+                <li>Provide customer support and maintain and improve our services.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="policy-section" id="google-login">
+            <span class="section-icon" aria-hidden="true">◎</span>
+            <div>
+              <h2><span>4.</span> Google Login and Authentication</h2>
+              <p>Somo Leads uses Google OAuth for user authentication.</p>
+              <p>
+                When you sign in using Google, we may receive your name, email
+                address, Google account identifier, and profile information
+                according to the permissions granted.
+              </p>
+              <p>
+                Logging out only ends your active session. It does not
+                automatically delete your account or associated information.
+                If you revoke Google access or delete your Google account, your
+                existing Somo Leads database record will not automatically be
+                deleted.
+              </p>
+            </div>
+          </section>
+
+          <section class="policy-section" id="cookies">
+            <span class="section-icon" aria-hidden="true">◉</span>
+            <div>
+              <h2><span>5.</span> Cookies and Sessions</h2>
+              <p>
+                We use session cookies to support authentication and essential
+                website functionality. Our application uses available cookie
+                security settings, including HttpOnly, SameSite, and Secure
+                settings where configured.
+              </p>
+              <p>These cookies help maintain your login session and protect access to your account.</p>
+            </div>
+          </section>
+
+          <section class="policy-section" id="third-parties">
+            <span class="section-icon" aria-hidden="true">↗</span>
+            <div>
+              <h2><span>6.</span> Third-Party Services</h2>
+              <p>Somo Leads uses third-party services to provide its functionality:</p>
+              <ul>
+                <li><strong>Google OAuth:</strong> Used to authenticate users and receive permitted Google profile information.</li>
+                <li><strong>Google Places API:</strong> Used to search for business information based on user-selected locations and keywords.</li>
+                <li><strong>Freemius:</strong> Used for subscription checkout, payment processing, billing-related services, and subscription management.</li>
+              </ul>
+              <p>
+                Payment processing is handled by Freemius. Somo Leads does not
+                intentionally store full payment card numbers or CVV security
+                codes in its application database.
+              </p>
+              <p>These third-party providers process information according to their respective privacy policies and applicable terms.</p>
+            </div>
+          </section>
+
+          <section class="policy-section" id="retention">
+            <span class="section-icon" aria-hidden="true">◷</span>
+            <div>
+              <h2><span>7.</span> Data Retention</h2>
+              <p>We retain user information according to the following principles:</p>
+              <ul>
+                <li>Account information, including name and email, remains stored while the user's Somo Leads account is maintained.</li>
+                <li>Logging out does not delete account information, and revoking Google access does not automatically delete existing database records.</li>
+                <li>Search history is retained across monthly subscription renewals and is not automatically reset each month.</li>
+                <li>Subscription information remains associated with the user's account.</li>
+                <li>Payment-related records are handled through Freemius and may be retained according to its applicable policies and legal requirements.</li>
+              </ul>
+              <p>
+                We do not currently specify a universal fixed retention period
+                for all categories of information. Retention may be affected by
+                applicable legal obligations and legitimate operational
+                requirements.
+              </p>
+            </div>
+          </section>
+
+          <section class="policy-section" id="subscriptions">
+            <span class="section-icon" aria-hidden="true">$</span>
+            <div>
+              <h2><span>8.</span> Subscriptions and Cancellations</h2>
+              <p>Somo Leads uses Freemius to manage paid subscriptions.</p>
+              <p>Logging out or logging back into your account does not cancel your subscription.</p>
+              <p>
+                If you cancel a recurring subscription, your paid access
+                generally remains available until the end of the applicable
+                paid billing period, subject to the subscription terms and
+                Freemius processing.
+              </p>
+              <p>After the applicable expiration date, your account may move to the Free plan and its associated usage limits.</p>
+            </div>
+          </section>
+
+          <section class="policy-section" id="security">
+            <span class="section-icon" aria-hidden="true">✓</span>
+            <div>
+              <h2><span>9.</span> Data Security</h2>
+              <p>
+                We use application-level security measures intended to protect
+                user information, including authentication controls, session
+                security settings, and webhook signature verification where
+                implemented.
+              </p>
+              <p>However, no internet-based service or electronic storage system can guarantee absolute security.</p>
+            </div>
+          </section>
+
+          <section class="policy-section" id="rights">
+            <span class="section-icon" aria-hidden="true">♙</span>
+            <div>
+              <h2><span>10.</span> User Rights and Account Information</h2>
+              <p>Users can view their name and email address through the Profile page. Users cannot directly edit these details through the application.</p>
+              <p>
+                If you believe your account information is inaccurate, you may
+                contact us using your registered email address. We may verify
+                your identity before processing a correction request.
+              </p>
+              <p>
+                We aim to review and respond to correction requests within
+                <strong>3 business days</strong>. Where appropriate and
+                technically possible, we will correct inaccurate information.
+                If the information originates from Google, you may need to
+                update your Google account information.
+              </p>
+              <p>For privacy-related questions or requests concerning your personal information, please contact our support team.</p>
+            </div>
+          </section>
+
+          <section class="policy-section" id="children">
+            <span class="section-icon" aria-hidden="true">♡</span>
+            <div>
+              <h2><span>11.</span> Children's Privacy</h2>
+              <p>Somo Leads is a business-oriented service and is not intended for children under the age of 13.</p>
+              <p>We do not knowingly collect personal information from children under 13.</p>
+            </div>
+          </section>
+
+          <section class="policy-section" id="changes">
+            <span class="section-icon" aria-hidden="true">↻</span>
+            <div>
+              <h2><span>12.</span> Changes to This Privacy Policy</h2>
+              <p>
+                We may update this Privacy Policy from time to time to reflect
+                changes in our services, business practices, or applicable
+                legal requirements.
+              </p>
+              <p>Any updated version will be published on this page with a revised Last Updated date.</p>
+            </div>
+          </section>
+
+          <section class="policy-section" id="contact">
+            <span class="section-icon" aria-hidden="true">✉</span>
+            <div>
+              <h2><span>13.</span> Contact Information</h2>
+              <p>For privacy-related questions, account information corrections, or other concerns, contact our support team:</p>
+              <ul class="contact-details">
+                <li><strong>Company:</strong> TYBWORK.LTD</li>
+                <li><strong>Product:</strong> Somo Leads</li>
+                <li><strong>Website:</strong> <a href="https://www.tybwork.com/" target="_blank" rel="noopener noreferrer">https://www.tybwork.com/</a></li>
+                <li><strong>Support Email:</strong> <a href="mailto:hi@tybwork.com">hi@tybwork.com</a></li>
+              </ul>
+            </div>
+          </section>
+
+          <div class="privacy-cta">
+            <span class="cta-shield" aria-hidden="true">✓</span>
+            <div>
+              <strong>Your trust and privacy are important to us.</strong>
+              <span>If you have questions, please contact our support team.</span>
+            </div>
+            <a href="mailto:hi@tybwork.com">✉ &nbsp;Contact Us</a>
+          </div>
+        </article>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="{{ url_for('home') }}">
+            <img
+              src="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}"
+              alt=""
+            />
+            <span>Somo <strong>Leads</strong></span>
+          </a>
+          <span>Find · Connect · Grow</span>
+        </div>
+        <div>
+          <h2>Quick Links</h2>
+          <a href="{{ url_for('home') }}">Home</a>
+          <a href="{{ url_for('plans.pricing') }}">Pricing</a>
+          <a href="{{ url_for('profile.profile') }}">Dashboard</a>
+        </div>
+        <div>
+          <h2>Privacy</h2>
+          <a href="{{ url_for('privacy_policy') }}">Privacy Policy</a>
+          <a href="#rights">Your Account Information</a>
+        </div>
+        <div>
+          <h2>Contact Us</h2>
+          <a href="mailto:hi@tybwork.com">✉ &nbsp;hi@tybwork.com</a>
+          <a href="https://www.tybwork.com/" target="_blank" rel="noopener noreferrer">◎ &nbsp;tybwork.com</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 TYBWORK.LTD. All rights reserved.</span>
+        <span>Somo Leads — Operated by TYBWORK.LTD</span>
+      </div>
+    </footer>
+  </body>
+</html>

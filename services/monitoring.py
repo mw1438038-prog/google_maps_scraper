@@ -215,7 +215,10 @@ def record_error(category, severity, summary, exception=None, status=None):
     except Exception as persist_error:
         current_app.logger.error(
             "Monitoring event could not be persisted.",
-            extra={"category": "monitoring", "monitoring_exception_type": type(persist_error).__name__},
+            extra={
+                "category": "monitoring",
+                "monitoring_exception_type": type(persist_error).__name__,
+            },
         )
         return False
 
@@ -379,18 +382,27 @@ def initialize_request_tracking(app):
     from flask import got_request_exception
 
     def _record_unhandled(sender, exception, **extra):
-        # Flask emits this while the request context is active.
         try:
             from sqlalchemy.exc import SQLAlchemyError
-            category = "neon" if isinstance(exception, SQLAlchemyError) else _route_error_category()
+
+            category = (
+                "neon"
+                if isinstance(exception, SQLAlchemyError)
+                else _route_error_category()
+            )
             record_error(
                 category,
-                "CRITICAL" if isinstance(exception, (MemoryError, SystemError)) else "ERROR",
+                "CRITICAL"
+                if isinstance(exception, (MemoryError, SystemError))
+                else "ERROR",
                 "Unhandled request exception.",
                 exception=exception,
                 status=500,
             )
         except Exception as error:
-            _log_monitoring_failure("Monitoring exception tracking failed.", error)
+            _log_monitoring_failure(
+                "Monitoring exception tracking failed.",
+                error,
+            )
 
     got_request_exception.connect(_record_unhandled, app, weak=False)

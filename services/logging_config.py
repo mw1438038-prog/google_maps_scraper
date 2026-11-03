@@ -57,6 +57,9 @@ class SafeJsonFormatter(logging.Formatter):
         exception = getattr(record, "monitoring_exception_type", None)
         if exception:
             payload["exception_type"] = str(exception)[:100]
+        http_status = getattr(record, "http_status", None)
+        if isinstance(http_status, int) and not isinstance(http_status, bool):
+            payload["http_status"] = http_status
         return json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
 
 
@@ -88,6 +91,7 @@ class MonitoringEventHandler(logging.Handler):
             category = getattr(record, "category", None)
             if not category:
                 from services.monitoring import _route_error_category
+
                 category = _route_error_category()
             record_error(
                 category,

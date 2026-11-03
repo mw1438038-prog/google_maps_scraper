@@ -34,7 +34,7 @@ PLAN_DETAILS = {
     },
     "pro": {
         "name": "Pro Plan",
-        "price": 1,
+        "price": 9,
         "searches": PLAN_LIMITS["pro"]["searches"],
         
     },

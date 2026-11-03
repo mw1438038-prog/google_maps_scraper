@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Your Somo LeadFinder account profile." />
     <title>Account Profile - Somo LeadFinder</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,20 +16,15 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='profile.css') }}"
     />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='legal.css') }}"
-    />
   </head>
 
   <body>
     <div class="dashboard-layout">
       <aside class="sidebar">
         <div class="sidebar-brand">
-          <div class="brand-logo material-symbols-outlined">location_on</div>
+          <img class="brand-logo site-logo" src="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}" alt="" />
           <div class="brand-text">
-            <strong>Google Maps</strong>
-            <span>Somo LeadFinder</span>
+            <strong>Somo LeadFinder</strong>
           </div>
         </div>
 
@@ -75,7 +71,7 @@
       <main class="main-content">
         <header class="top-header">
           <div class="mobile-brand">
-            <div class="brand-logo small">LF</div>
+            <img class="brand-logo small site-logo" src="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}" alt="" />
             <strong>Somo LeadFinder</strong>
           </div>
           <div class="header-spacer"></div>
@@ -133,6 +129,14 @@
                   <h3>{{ user.name }}</h3>
                   <p>{{ user.email }}</p>
                   <span class="google-account">✓ Google account connected</span>
+                  <p class="account-correction-note">
+                    Your name and email are read-only here. To request a
+                    correction, contact TYBWORK.LTD at
+                    <a href="mailto:hi@tybwork.com?subject=Account%20information%20correction">hi@tybwork.com</a>
+                    (<a href="https://www.tybwork.com/" rel="noopener noreferrer">tybwork.com</a>).
+                    We will verify requests before changing account data and
+                    target a response within 3 business days.
+                  </p>
                 </div>
               </div>
 
@@ -147,7 +151,7 @@
                 </div>
                 {% if user.subscription_expires %}
                 <div class="detail-row">
-                  <span>Subscription renews</span>
+                  <span>Paid through / renewal date</span>
                   <strong>{{ user.subscription_expires }}</strong>
                 </div>
                 {% endif %}
@@ -173,7 +177,7 @@
                   <span>free forever</span>
                   <p>Includes 10 searches each month.</p>
                   {% elif user.plan == "pro" %}
-                  <strong>$1</strong>
+                  <strong>$9</strong>
                   <span>/ month</span>
                   {% else %}
                   <strong>$24</strong>
@@ -222,7 +226,6 @@
         <footer class="dashboard-footer">
           <span>© 2026 TYB Work</span>
           <span>Somo LeadFinder</span>
-          {% include "_legal_footer_links.html" %}
         </footer>
       </main>
     </div>

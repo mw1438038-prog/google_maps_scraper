@@ -7,6 +7,7 @@
 
     <meta name="description" content="Search businesses across connected map providers with Somo LeadFinder." />
     <title>Somo LeadFinder</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}" />
 
     <link
       rel="stylesheet"
@@ -26,7 +27,10 @@
       <header class="hero">
         <div class="hero-top">
           <div class="hero-content">
-            <h1>Somo LeadFinder</h1>
+            <h1 class="app-brand">
+              <img src="{{ url_for('static', filename='images/somo-leadfinder-logo.png') }}" alt="" />
+              <span>Somo LeadFinder</span>
+            </h1>
 
             <p>Find businesses across available map providers by country, city and keyword</p>
           </div>
