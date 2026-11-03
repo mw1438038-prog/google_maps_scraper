@@ -5,6 +5,7 @@ from flask import (
     redirect,
     url_for,
     session,
+    request,
 )
 
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -18,9 +19,7 @@ from services.logging_config import configure_logging
 from models.user import User
 from models.exported_lead import ExportedLead
 from models.freemius_webhook_event import FreemiusWebhookEvent
-from models.error_event import ErrorEvent
 from models.request_metric import RequestMetric
-from models.component_health import ComponentHealth
 
 # Blueprints
 from routes.locations import locations_bp
@@ -33,7 +32,6 @@ from routes.payment import payment_bp
 
 from routes.auth import auth_bp, init_oauth
 from routes.profile import profile_bp
-from routes.legal_pages import register_legal_pages
 from services.monitoring import initialize_request_tracking
 
 
@@ -45,12 +43,15 @@ def create_app():
 
     # Database
     db.init_app(app)
+
     try:
         initialize_database(app)
         app.logger.info("Database schema check completed successfully.")
+
     except Exception:
-        db.session.rollback()
-        app.logger.error(
+        # Log the original database initialization error.
+        # Do not call db.session.rollback() outside app context.
+        app.logger.exception(
             "Database initialization or schema check failed.",
             extra={
                 "category": "neon",
@@ -86,21 +87,16 @@ def create_app():
     @app.before_request
     def validate_user_session():
         # Public routes remain accessible without login.
-        endpoint = __import__("flask").request.endpoint
-
         public_endpoints = {
             "home",
-            "privacy_policy",
-            "terms_conditions",
-            "refund_cancellation_policy",
-            "cookie_policy",
             "pricing_page",
+            "privacy_policy",
             "auth.google_login",
             "auth.google_callback",
             "static",
         }
 
-        if endpoint in public_endpoints or endpoint is None:
+        if request.endpoint in public_endpoints or request.endpoint is None:
             return None
 
         user_data = session.get("user")
@@ -125,7 +121,7 @@ def create_app():
 
         except Exception:
             db.session.rollback()
-            app.logger.error(
+            app.logger.exception(
                 "Could not validate the logged-in user.",
                 extra={
                     "category": "neon",
@@ -142,7 +138,10 @@ def create_app():
     def home():
         return render_template("home.html")
 
-    register_legal_pages(app)
+    # Privacy Policy
+    @app.route("/privacy-policy")
+    def privacy_policy():
+        return render_template("privacy_policy.html")
 
     # Leads dashboard
     @app.route("/leads")
@@ -154,13 +153,11 @@ def create_app():
 
         return render_template("index.html")
 
-
-
     # Pricing
     @app.route("/pricing")
     def pricing_page():
         return render_template("pricing.html")
-    
+
     # Subscription
     @app.route("/subscription")
     def subscription_page():
@@ -170,7 +167,6 @@ def create_app():
             return redirect(url_for("home"))
 
         return render_template("subscription.html")
-    
 
     return app
 
