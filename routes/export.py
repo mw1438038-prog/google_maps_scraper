@@ -260,8 +260,6 @@ def _export_rows(include_details=False):
     if include_details:
         return (
             [
-                "Source",
-                "Google Place ID",
                 "Business",
                 "Phone",
                 "Website",
@@ -278,8 +276,6 @@ def _export_rows(include_details=False):
                 "Search Query",
             ],
             [
-                "source",
-                "place_id",
                 "name",
                 "phone",
                 "website",
@@ -298,8 +294,8 @@ def _export_rows(include_details=False):
         )
 
     return (
-        ["Source", "Google Place ID", "Search Query"],
-        ["source", "place_id", "query"],
+        ["Search Query"],
+        ["query"],
     )
 
 
@@ -343,8 +339,8 @@ def _build_excel(results, include_details=False):
             ])
 
     widths = (
-        24, 36, 32, 20, 36, 32, 32, 32,
-        32, 32, 32, 48, 12, 12, 48, 80,
+        32, 20, 36, 32, 32, 32, 32,
+        32, 32, 48, 12, 12, 48, 80,
     )
     for column_index, width in enumerate(widths, start=1):
         if column_index <= worksheet.max_column:
