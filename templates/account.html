@@ -173,14 +173,14 @@
                 <div>
                   <h3>{{ user.plan_name }}</h3>
                   {% if user.plan == "free" %}
-                  <strong>$0</strong>
+                  <strong>${{ user.plan_price }}</strong>
                   <span>free forever</span>
                   <p>Includes 10 searches each month.</p>
                   {% elif user.plan == "pro" %}
-                  <strong>$9</strong>
+                  <strong>${{ user.plan_price }}</strong>
                   <span>/ month</span>
                   {% else %}
-                  <strong>$24</strong>
+                  <strong>${{ user.plan_price }}</strong>
                   <span>/ month</span>
                   {% endif %}
                 </div>

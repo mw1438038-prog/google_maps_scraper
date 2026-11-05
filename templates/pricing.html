@@ -676,12 +676,12 @@ body {
         <article class="plan-card">
             <h2 class="plan-name"><span>Free</span></h2>
 
-            <div class="price">$0</div>
+            <div class="price">${{ plans.free.price }}</div>
             <div class="period">Forever Free</div>
 
             <div class="search-limit">
                 <span class="search-icon">⌕</span>
-                <strong>10 Searches / Month</strong>
+                <strong>{{ "{:,}".format(plans.free.searches) }} Searches / Month</strong>
             </div>
 
             <h3 class="feature-heading">Included Features</h3>
@@ -704,12 +704,12 @@ body {
         <article class="plan-card">
             <h2 class="plan-name"><span>Pro</span></h2>
 
-            <div class="price">$9</div>
+            <div class="price">${{ plans.pro.price }}</div>
             <div class="period">Per Month</div>
 
             <div class="search-limit">
                 <span class="search-icon">⌕</span>
-                <strong>1,000 Searches / Month</strong>
+                <strong>{{ "{:,}".format(plans.pro.searches) }} Searches / Month</strong>
             </div>
 
             <h3 class="feature-heading">Pro Features</h3>
@@ -732,12 +732,12 @@ body {
         <article class="plan-card">
             <h2 class="plan-name"><span>Business</span></h2>
 
-            <div class="price">$24</div>
+            <div class="price">${{ plans.business.price }}</div>
             <div class="period">Per Month</div>
 
             <div class="search-limit">
                 <span class="search-icon">⌕</span>
-                <strong>Unlimited Searches</strong>
+                <strong>{% if plans.business.searches is none %}Unlimited Searches{% else %}{{ "{:,}".format(plans.business.searches) }} Searches / Month{% endif %}</strong>
             </div>
 
             <h3 class="feature-heading">Business Features</h3>
@@ -781,9 +781,9 @@ body {
             <tbody>
                 <tr>
                     <td>Monthly Searches</td>
-                    <td>10</td>
-                    <td>1,000</td>
-                    <td>Unlimited</td>
+                    <td>{{ "{:,}".format(plans.free.searches) }}</td>
+                    <td>{{ "{:,}".format(plans.pro.searches) }}</td>
+                    <td>{% if plans.business.searches is none %}Unlimited{% else %}{{ "{:,}".format(plans.business.searches) }}{% endif %}</td>
                 </tr>
                 <tr>
                     <td>Results per Search</td>

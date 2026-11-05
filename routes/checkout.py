@@ -18,33 +18,11 @@ from flask import (
 from extensions import db
 from models.user import User
 from services.monitoring import record_error
-from services.plan_limits import PLAN_LIMITS
+from services.plan_limits import FREEMIUS_PLAN_ID_SETTINGS, PLAN_DETAILS
 
 
 checkout_bp = Blueprint("checkout", __name__)
 FREEMIUS_API_BASE = "https://api.freemius.com/v1"
-
-
-PLAN_DETAILS = {
-    "free": {
-        "name": "Free Plan",
-        "price": 0,
-        "searches": PLAN_LIMITS["free"]["searches"],
-        
-    },
-    "pro": {
-        "name": "Pro Plan",
-        "price": 9,
-        "searches": PLAN_LIMITS["pro"]["searches"],
-        
-    },
-    "business": {
-        "name": "Business Plan",
-        "price": 24,
-        "searches": PLAN_LIMITS["business"]["searches"],
-        
-    },
-}
 
 
 def get_current_user():
@@ -57,10 +35,7 @@ def get_current_user():
 
 
 def get_freemius_plan_id(plan):
-    setting_name = {
-        "pro": "FREEMIUS_PRO_PLAN_ID",
-        "business": "FREEMIUS_BUSINESS_PLAN_ID",
-    }.get(plan)
+    setting_name = FREEMIUS_PLAN_ID_SETTINGS.get(plan)
 
     if not setting_name:
         return ""

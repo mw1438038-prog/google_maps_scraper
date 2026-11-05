@@ -17,6 +17,32 @@ PLAN_LIMITS = {
     },
 }
 
+PLAN_DETAILS = {
+    "free": {
+        "name": "Free Plan",
+        "searches": PLAN_LIMITS["free"]["searches"],
+        "price": 0,
+        "billing": "free",
+    },
+    "pro": {
+        "name": "Pro Plan",
+        "searches": PLAN_LIMITS["pro"]["searches"],
+        "price": 9,
+        "billing": "monthly",
+    },
+    "business": {
+        "name": "Business Plan",
+        "searches": PLAN_LIMITS["business"]["searches"],
+        "price": 24,
+        "billing": "monthly",
+    },
+}
+
+FREEMIUS_PLAN_ID_SETTINGS = {
+    "pro": "FREEMIUS_PRO_PLAN_ID",
+    "business": "FREEMIUS_BUSINESS_PLAN_ID",
+}
+
 PLAN_RANK = {
     "free": 0,
     "pro": 1,

@@ -10,37 +10,11 @@ from flask import (
 from extensions import db
 from models.user import User
 from routes.usage import check_subscription_expiry
-from services.plan_limits import PLAN_LIMITS
+from services.plan_limits import PLAN_DETAILS
 from services.quotas import refresh_free_quota
 
 
 plans_bp = Blueprint("plans", __name__)
-
-
-# =====================================================
-# PLAN DETAILS
-# =====================================================
-
-PLAN_DETAILS = {
-    "free": {
-        "name": "Free Plan",
-        "searches": PLAN_LIMITS["free"]["searches"],
-        "price": 0,
-        "billing": "free",
-    },
-    "pro": {
-        "name": "Pro",
-        "searches": PLAN_LIMITS["pro"]["searches"],
-        "price": 9,
-        "billing": "monthly",
-    },
-    "business": {
-        "name": "Business",
-        "searches": PLAN_LIMITS["business"]["searches"],
-        "price": 24,
-        "billing": "monthly",
-    },
-}
 
 
 # =====================================================
@@ -70,6 +44,7 @@ def pricing():
     return render_template(
         "pricing.html",
         current_user=session.get("user") or {},
+        plans=PLAN_DETAILS,
     )
 
 

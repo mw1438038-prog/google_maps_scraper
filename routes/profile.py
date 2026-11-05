@@ -18,6 +18,7 @@ from models.user import User
 from models.search_history import SearchHistory
 from models.exported_lead import ExportedLead
 from routes.usage import get_usage
+from services.plan_limits import PLAN_DETAILS
 
 
 profile_bp = Blueprint("profile", __name__, url_prefix="/profile")
@@ -274,7 +275,7 @@ def _get_profile_data(user):
     usage = get_usage(user)
 
     searches_used = usage["used"]
-    plan = (user.plan or "free").lower()
+    plan = usage["plan"]
     searches_limit = usage["limit"]
 
     usage_percentage = (
@@ -321,6 +322,7 @@ def _get_profile_data(user):
         "picture": user.picture,
         "plan": plan,
         "plan_name": plan_name,
+        "plan_price": PLAN_DETAILS.get(plan, PLAN_DETAILS["free"])["price"],
         "searches_used": searches_used,
         "searches_limit": searches_limit,
         "searches_limit_display": searches_limit_display,

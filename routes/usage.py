@@ -69,6 +69,7 @@ def get_user_plan(user):
 
 
 def get_plan_limits(user):
+    check_subscription_expiry(user)
     return PLAN_LIMITS[get_user_plan(user)]
 
 
@@ -85,6 +86,16 @@ def check_subscription_expiry(user):
     if plan == "free":
         return False
 
+    subscription_status = (
+        user.subscription_status or "inactive"
+    ).strip().lower()
+    if subscription_status != "active":
+        expire_subscription_to_free(
+            user,
+            status=subscription_status,
+        )
+        return True
+
     expires_at = user.subscription_expires_at
 
     if not expires_at:
@@ -96,12 +107,7 @@ def check_subscription_expiry(user):
         now = now.replace(tzinfo=None)
 
     if now >= expires_at:
-        if (
-            user.subscription_status != "expired"
-            or (user.plan or "free").lower() != "free"
-        ):
-            expire_subscription_to_free(user)
-
+        expire_subscription_to_free(user)
         return True
 
     return False
@@ -131,10 +137,7 @@ def can_search(user):
         return True
 
     limits = get_plan_limits(user)
-    quota_limit = max(
-        int(user.searches_limit or 0),
-        limits["searches"],
-    )
+    quota_limit = limits["searches"]
 
     if user.searches_used >= quota_limit:
         return False
@@ -177,15 +180,12 @@ def get_usage(user):
         limit = None
         remaining = None
     else:
-        limit = max(
-            int(user.searches_limit or 0),
-            limits["searches"],
-        )
+        limit = limits["searches"]
         remaining = max(limit - used, 0)
 
-    if plan == "pro" and (
+    if plan in ("pro", "business") and (
         subscription_expired
-        or (user.subscription_status or "").lower() != "active"
+        or (user.subscription_status or "").strip().lower() != "active"
     ):
         remaining = 0
 
@@ -218,6 +218,7 @@ def consume_search(user, history_record=None):
     if not can_search(user):
         return False
 
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     conditions = [User.id == user.id]
 
     if plan == "free":
@@ -229,17 +230,14 @@ def consume_search(user, history_record=None):
         conditions.extend([
             User.plan == "business",
             User.subscription_status == "active",
-            User.subscription_expires_at > datetime.utcnow(),
+            User.subscription_expires_at > now,
         ])
     else:
         conditions.extend([
             User.plan == plan,
             User.subscription_status == "active",
-            User.subscription_expires_at > datetime.utcnow(),
-            User.searches_used < max(
-                int(user.searches_limit or 0),
-                PLAN_LIMITS[plan]["searches"],
-            ),
+            User.subscription_expires_at > now,
+            User.searches_used < PLAN_LIMITS[plan]["searches"],
         ])
 
     statement = update(User).where(*conditions).values(

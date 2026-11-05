@@ -11,7 +11,11 @@ from flask import Blueprint, current_app, jsonify, request
 from extensions import db
 from models.freemius_webhook_event import FreemiusWebhookEvent
 from models.user import User
-from services.plan_limits import PLAN_LIMITS, PLAN_RANK
+from services.plan_limits import (
+    FREEMIUS_PLAN_ID_SETTINGS,
+    PLAN_LIMITS,
+    PLAN_RANK,
+)
 from services.quotas import (
     expire_subscription_to_free,
     refresh_free_quota,
@@ -246,19 +250,12 @@ def _get_local_user_for_license(license_data):
 def _plan_from_license(license_data):
     plan_id = str(license_data.get("plan_id", "")).strip()
 
-    pro_id = str(
-        current_app.config.get("FREEMIUS_PRO_PLAN_ID") or ""
-    ).strip()
-
-    business_id = str(
-        current_app.config.get("FREEMIUS_BUSINESS_PLAN_ID") or ""
-    ).strip()
-
-    if pro_id and plan_id == pro_id:
-        return "pro"
-
-    if business_id and plan_id == business_id:
-        return "business"
+    for plan, setting_name in FREEMIUS_PLAN_ID_SETTINGS.items():
+        configured_id = str(
+            current_app.config.get(setting_name) or ""
+        ).strip()
+        if configured_id and plan_id == configured_id:
+            return plan
 
     current_app.logger.warning(
         "Unrecognized Freemius plan ID: %s",
@@ -266,6 +263,13 @@ def _plan_from_license(license_data):
     )
 
     return None
+
+
+def _stored_search_limit(plan, carryover_searches=0):
+    plan_limit = PLAN_LIMITS[plan]["searches"]
+    if plan_limit is None:
+        return None
+    return plan_limit + carryover_searches
 
 
 # =====================================================
@@ -414,10 +418,9 @@ def _sync_license(license_id):
         user.searches_used = 0
         user.searches_reset_at = now
         user.searches_rollover_remaining = carryover_searches
-        user.searches_limit = (
-            None
-            if plan == "business"
-            else PLAN_LIMITS[plan]["searches"] + carryover_searches
+        user.searches_limit = _stored_search_limit(
+            plan,
+            carryover_searches,
         )
     elif new_subscription_period:
         # A successful renewal (or a genuinely new same-tier subscription)
@@ -425,9 +428,7 @@ def _sync_license(license_id):
         user.searches_used = 0
         user.searches_reset_at = now
         user.searches_rollover_remaining = 0
-        user.searches_limit = (
-            None if plan == "business" else PLAN_LIMITS[plan]["searches"]
-        )
+        user.searches_limit = _stored_search_limit(plan)
 
     user.plan = plan
     user.free_trial_used = True

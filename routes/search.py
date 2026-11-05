@@ -211,7 +211,16 @@ def search():
                 {
                     "source": result.get("source", ""),
                     "google_place_id": str(
-                        result.get("provider_ids", {}).get("google_maps", "")
+                        (
+                            result.get("provider_ids", {}).get("google_maps")
+                            if isinstance(result.get("provider_ids"), dict)
+                            else None
+                        )
+                        or result.get("google_place_id")
+                        or result.get("place_id")
+                        or result.get("provider_id")
+                        or result.get("id")
+                        or ""
                     ),
                 }
                 for result in results
